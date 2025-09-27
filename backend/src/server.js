@@ -182,3 +182,65 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📍 Server URL: http://0.0.0.0:${PORT}`);
 });
+
+// Add this after the auth routes in your server.js
+
+// Simple in-memory user storage (for demo only)
+let users = [
+  {
+    id: 1,
+    name: 'Admin User',
+    email: 'admin@unionbank.com',
+    password: 'admin123', // In real app, hash passwords!
+    role: 'admin',
+    accountNumber: '1000001',
+    balance: 10000.00
+  }
+];
+
+// Create user endpoint
+app.post('/api/users', (req, res) => {
+  try {
+    const { name, email, password, initialDeposit = 0 } = req.body;
+    
+    console.log('Creating user:', { name, email });
+    
+    // Check if user already exists
+    if (users.find(u => u.email === email)) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+    
+    // Create new user
+    const newUser = {
+      id: users.length + 1,
+      name,
+      email,
+      password, // In real app, hash this!
+      role: 'user',
+      accountNumber: `1000${String(users.length + 1).padStart(3, '0')}`,
+      balance: parseFloat(initialDeposit) || 0,
+      createdAt: new Date().toISOString()
+    };
+    
+    users.push(newUser);
+    
+    // Return user without password
+    const { password: _, ...userWithoutPassword } = newUser;
+    
+    res.json({
+      message: 'User created successfully',
+      user: userWithoutPassword
+    });
+    
+  } catch (error) {
+    console.error('User creation error:', error);
+    res.status(500).json({ message: 'Error creating user' });
+  }
+});
+
+// Get users endpoint (for testing)
+app.get('/api/users', (req, res) => {
+  // Return users without passwords
+  const usersWithoutPasswords = users.map(({ password, ...user }) => user);
+  res.json(usersWithoutPasswords);
+});
