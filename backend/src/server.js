@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 console.log('✅ Starting server...');
@@ -8,23 +9,14 @@ console.log('✅ Environment:', process.env.NODE_ENV);
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// CORS Middleware - Fix this section
-app.use(cors({
-    origin: true, // Allow all origins for now (we'll restrict later)
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
-
-// Handle preflight requests
-app.options('*', cors());
-
+// Simple CORS for now
+app.use(cors());
 app.use(express.json());
 
-// Import and use routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/admin', require('./routes/admin'));
-app.use('/api/users', require('./routes/users'));
+// ✅ FIXED: Use absolute paths for routes
+app.use('/api/auth', require(path.join(__dirname, 'routes', 'auth')));
+app.use('/api/admin', require(path.join(__dirname, 'routes', 'admin')));
+app.use('/api/users', require(path.join(__dirname, 'routes', 'users')));
 
 // Test route
 app.get('/', (req, res) => {
