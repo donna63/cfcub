@@ -1,113 +1,3 @@
-// // const express = require('express');
-// // const cors = require('cors');
-// // const path = require('path');
-// // require('dotenv').config();
-
-// // console.log('✅ Starting server...');
-// // console.log('✅ Environment:', process.env.NODE_ENV);
-
-// // const app = express();
-// // const PORT = process.env.PORT || 5001;
-
-// // // Simple CORS for now
-// // app.use(cors());
-// // app.use(express.json());
-
-// // // ✅ FIXED: Use absolute paths for routes
-// // app.use('/api/auth', require(path.join(__dirname, 'routes', 'auth')));
-// // app.use('/api/admin', require(path.join(__dirname, 'routes', 'admin')));
-// // app.use('/api/users', require(path.join(__dirname, 'routes', 'users')));
-
-// // // Test route
-// // app.get('/', (req, res) => {
-// //     res.json({ 
-// //         message: 'Banking API Server is running!',
-// //         status: 'OK',
-// //         timestamp: new Date().toISOString()
-// //     });
-// // });
-
-// // // Health check
-// // app.get('/health', (req, res) => {
-// //     res.json({ 
-// //         status: 'OK', 
-// //         message: 'Server is healthy!',
-// //         environment: process.env.NODE_ENV 
-// //     });
-// // });
-
-// // // Simple test route
-// // app.get('/api/test', (req, res) => {
-// //     res.json({ message: 'API is working!' });
-// // });
-
-// // // Start server
-// // app.listen(PORT, '0.0.0.0', () => {
-// //     console.log(`🚀 Server running on port ${PORT}`);
-// //     console.log(`📍 Server URL: http://0.0.0.0:${PORT}`);
-// //     console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-// // });
-
-// const express = require('express');
-// const cors = require('cors');
-// require('dotenv').config();
-
-// console.log('✅ Starting server...');
-
-// const app = express();
-// const PORT = process.env.PORT || 5001;
-
-// // Simple CORS
-// app.use(cors());
-// app.use(express.json());
-
-// // Import routes
-// app.use('/api/auth', require('./routes/auth'));
-// app.use('/api/admin', require('./routes/admin'));
-// app.use('/api/users', require('./routes/users'));
-
-// // Simple in-memory user for testing (remove this later)
-// const testUser = {
-//   id: 1,
-//   name: 'Admin User',
-//   email: 'admin@unionbank.com',
-//   role: 'admin'
-// };
-
-// // Override the auth login route temporarily
-// app.post('/api/auth/login', (req, res) => {
-//   const { email, password } = req.body;
-  
-//   // Simple hardcoded login for testing
-//   if (email === 'admin@unionbank.com' && password === 'admin123') {
-//     res.json({
-//       token: 'test-jwt-token',
-//       user: testUser
-//     });
-//   } else {
-//     res.status(401).json({ message: 'Invalid credentials' });
-//   }
-// });
-
-// // Health check
-// app.get('/health', (req, res) => {
-//   res.json({ 
-//     status: 'OK', 
-//     message: 'Server is healthy!',
-//     environment: process.env.NODE_ENV 
-//   });
-// });
-
-// // Root
-// app.get('/', (req, res) => {
-//   res.json({ message: 'Banking API Server' });
-// });
-
-// // Start server
-// app.listen(PORT, '0.0.0.0', () => {
-//   console.log(`🚀 Server running on port ${PORT}`);
-// });
-
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
@@ -121,133 +11,7 @@ const PORT = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json());
 
-// Remove database imports - we don't need them
-// const { testConnection } = require('./config/database');
-// const { syncDatabase } = require('./models');
-
-// Simple in-memory user for testing
-const testUser = {
-  id: 1,
-  name: 'Admin User',
-  email: 'admin@unionbank.com',
-  role: 'admin'
-};
-
-// Auth login route
-app.post('/api/auth/login', (req, res) => {
-  const { email, password } = req.body;
-  
-  console.log('Login attempt:', email);
-  
-  // Simple hardcoded login
-  if (email === 'admin@unionbank.com' && password === 'admin123') {
-    res.json({
-      token: 'test-jwt-token-for-admin',
-      user: testUser
-    });
-  } else {
-    res.status(401).json({ message: 'Invalid email or password' });
-  }
-});
-
-// Simple auth me route
-app.get('/api/auth/me', (req, res) => {
-  res.json({ user: testUser });
-});
-
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    message: 'Server is healthy!',
-    environment: process.env.NODE_ENV 
-  });
-});
-
-// Root
-app.get('/', (req, res) => {
-  res.json({ 
-    message: 'Banking API Server is running!',
-    status: 'OK'
-  });
-});
-
-// Test route
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'API is working!' });
-});
-
-// Start server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📍 Server URL: http://0.0.0.0:${PORT}`);
-});
-
-// Add this after the auth routes in your server.js
-
-// Simple in-memory user storage (for demo only)
-let users = [
-  {
-    id: 1,
-    name: 'Admin User',
-    email: 'admin@unionbank.com',
-    password: 'admin123', // In real app, hash passwords!
-    role: 'admin',
-    accountNumber: '1000001',
-    balance: 10000.00
-  }
-];
-
-// Create user endpoint
-app.post('/api/users', (req, res) => {
-  try {
-    const { name, email, password, initialDeposit = 0 } = req.body;
-    
-    console.log('Creating user:', { name, email });
-    
-    // Check if user already exists
-    if (users.find(u => u.email === email)) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
-    
-    // Create new user
-    const newUser = {
-      id: users.length + 1,
-      name,
-      email,
-      password, // In real app, hash this!
-      role: 'user',
-      accountNumber: `1000${String(users.length + 1).padStart(3, '0')}`,
-      balance: parseFloat(initialDeposit) || 0,
-      createdAt: new Date().toISOString()
-    };
-    
-    users.push(newUser);
-    
-    // Return user without password
-    const { password: _, ...userWithoutPassword } = newUser;
-    
-    res.json({
-      message: 'User created successfully',
-      user: userWithoutPassword
-    });
-    
-  } catch (error) {
-    console.error('User creation error:', error);
-    res.status(500).json({ message: 'Error creating user' });
-  }
-});
-
-// Get users endpoint (for testing)
-app.get('/api/users', (req, res) => {
-  // Return users without passwords
-  const usersWithoutPasswords = users.map(({ password, ...user }) => user);
-  res.json(usersWithoutPasswords);
-});
-
-// Add these after your existing routes
-
-// Simple in-memory storage
+// ✅ ONLY ONE users declaration
 let users = [
   {
     id: 1,
@@ -263,7 +27,33 @@ let users = [
 
 let transactions = [];
 
-// Admin stats endpoint
+// ✅ Auth login route
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  
+  console.log('Login attempt:', email);
+  
+  const user = users.find(u => u.email === email && u.password === password);
+  if (user) {
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({
+      token: 'test-jwt-token-for-admin',
+      user: userWithoutPassword
+    });
+  } else {
+    res.status(401).json({ message: 'Invalid email or password' });
+  }
+});
+
+// ✅ Auth me route
+app.get('/api/auth/me', (req, res) => {
+  // For demo, return the first user (admin)
+  const user = users[0];
+  const { password: _, ...userWithoutPassword } = user;
+  res.json({ user: userWithoutPassword });
+});
+
+// ✅ Admin stats endpoint
 app.get('/api/admin/stats', (req, res) => {
   const totalUsers = users.length;
   const totalAccounts = users.length;
@@ -276,9 +66,8 @@ app.get('/api/admin/stats', (req, res) => {
   });
 });
 
-// Get all users endpoint
+// ✅ Get all users endpoint
 app.get('/api/admin/users', (req, res) => {
-  // Return users without passwords
   const usersWithoutPasswords = users.map(({ password, ...user }) => ({
     ...user,
     Account: {
@@ -290,19 +79,17 @@ app.get('/api/admin/users', (req, res) => {
   res.json({ users: usersWithoutPasswords });
 });
 
-// Create user endpoint (already exists, but make sure it's correct)
+// ✅ Create user endpoint (ONLY ONE)
 app.post('/api/users', (req, res) => {
   try {
     const { name, email, password, initialBalance = 0 } = req.body;
     
     console.log('Creating user:', { name, email });
     
-    // Check if user already exists
     if (users.find(u => u.email === email)) {
       return res.status(400).json({ message: 'User already exists' });
     }
     
-    // Create new user
     const newUser = {
       id: users.length + 1,
       name,
@@ -316,7 +103,6 @@ app.post('/api/users', (req, res) => {
     
     users.push(newUser);
     
-    // Return user without password
     const { password: _, ...userWithoutPassword } = newUser;
     
     res.json({
@@ -330,7 +116,7 @@ app.post('/api/users', (req, res) => {
   }
 });
 
-// Add transaction endpoint
+// ✅ Add transaction endpoint
 app.post('/api/admin/transactions', (req, res) => {
   try {
     const { userId, type, amount, description } = req.body;
@@ -342,7 +128,6 @@ app.post('/api/admin/transactions', (req, res) => {
     
     const transactionAmount = parseFloat(amount);
     
-    // Update user balance
     if (type === 'deposit') {
       user.balance += transactionAmount;
     } else if (type === 'withdrawal') {
@@ -352,7 +137,6 @@ app.post('/api/admin/transactions', (req, res) => {
       user.balance -= transactionAmount;
     }
     
-    // Add transaction
     const transaction = {
       id: transactions.length + 1,
       userId: parseInt(userId),
@@ -376,8 +160,30 @@ app.post('/api/admin/transactions', (req, res) => {
   }
 });
 
-// Get user transactions endpoint
-app.get('/api/admin/transactions/:userId', (req, res) => {
-  const userTransactions = transactions.filter(t => t.userId === parseInt(req.params.userId));
-  res.json({ transactions: userTransactions });
+// ✅ Health check
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Server is healthy!',
+    environment: process.env.NODE_ENV 
+  });
+});
+
+// ✅ Root
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Banking API Server is running!',
+    status: 'OK'
+  });
+});
+
+// ✅ Test route
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'API is working!' });
+});
+
+// ✅ Start server
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📍 Server URL: http://0.0.0.0:${PORT}`);
 });
