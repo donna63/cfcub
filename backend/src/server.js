@@ -8,6 +8,8 @@ console.log('✅ Environment:', process.env.NODE_ENV);
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+
+
 // Basic middleware
 app.use(cors());
 app.use(express.json());
