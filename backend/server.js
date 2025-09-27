@@ -7,22 +7,11 @@ const { syncDatabase } = require('./models');
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// Middleware - Remove the duplicate declarations below
+// Middleware - More permissive CORS for production
 app.use(cors({
-    origin: [
-        'http://127.0.0.1:5500', 
-        'http://localhost:5500', 
-        'http://localhost:3000',
-        'https://your-vercel-app.vercel.app' // We'll update this later
-    ],
+    origin: true, // Allow all origins in production (we'll restrict later)
     credentials: true
 }));
-
-// Or for development, you can use:
-// app.use(cors());
-
-// Or if you want to allow all origins (for development), use this instead:
-// app.use(cors());
 
 app.use(express.json());
 
@@ -31,17 +20,44 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/users', require('./routes/users'));
 
-// Health check
-app.get('/api/health', (req, res) => {
-    res.json({ 
+// Health check endpoint (important for Render)
+app.get('/health', (req, res) => {
+    res.status(200).json({ 
+        status: 'OK', 
         message: 'Banking API is running!', 
-        timestamp: new Date().toISOString() 
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV 
+    });
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+    res.json({ 
+        message: 'Banking API Server is running!',
+        endpoints: {
+            health: '/health',
+            auth: '/api/auth',
+            users: '/api/users',
+            admin: '/api/admin'
+        },
+        documentation: 'API documentation available at /api endpoints'
     });
 });
 
 // Start server
-app.listen(PORT, async () => {
+app.listen(PORT, '0.0.0.0', async () => {
     console.log(`🚀 Server running on port ${PORT}`);
-    await testConnection();
-    await syncDatabase();
+    console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🌐 Server URL: http://0.0.0.0:${PORT}`);
+    
+    try {
+        await testConnection();
+        console.log('✅ Database connection successful');
+        
+        await syncDatabase();
+        console.log('✅ Database synced successfully');
+    } catch (error) {
+        console.error('❌ Database setup failed:', error.message);
+        console.log('⚠️  Server starting without database connection');
+    }
 });
