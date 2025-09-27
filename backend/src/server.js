@@ -8,11 +8,23 @@ console.log('✅ Environment:', process.env.NODE_ENV);
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// CORS Middleware - Fix this section
+app.use(cors({
+    origin: true, // Allow all origins for now (we'll restrict later)
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 
+// Handle preflight requests
+app.options('*', cors());
 
-// Basic middleware
-app.use(cors());
 app.use(express.json());
+
+// Import and use routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/users', require('./routes/users'));
 
 // Test route
 app.get('/', (req, res) => {
@@ -42,13 +54,4 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📍 Server URL: http://0.0.0.0:${PORT}`);
     console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-    console.error('❌ Uncaught Exception:', error);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
 });

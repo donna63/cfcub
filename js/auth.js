@@ -1,5 +1,7 @@
 // API Base URL - Pointing to your backend on port 5001
-const API_BASE = 'http://localhost:5001/api';
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://localhost:5001/api' 
+    : 'https://banking-backend-hqe6.onrender.com/api';
 
 // Utility function for API calls
 async function apiCall(endpoint, options = {}) {
