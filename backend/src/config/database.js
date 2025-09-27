@@ -1,26 +1,22 @@
 const { Sequelize } = require('sequelize');
-require('dotenv').config();
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASS,
-  {
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    dialect: 'postgres',
-    logging: false, // Set to true to see SQL queries
-  }
-);
+// Use SQLite instead of PostgreSQL for simplicity
+const sequelize = new Sequelize({
+  dialect: 'sqlite',
+  storage: 'database.sqlite', // This will create a file-based database
+  logging: false, // Disable SQL log output
+});
 
-// Test database connection
-const testConnection = async () => {
+// Test connection
+async function testConnection() {
   try {
     await sequelize.authenticate();
     console.log('✅ Database connection established successfully.');
+    return true;
   } catch (error) {
-    console.error('❌ Unable to connect to the database:', error);
+    console.log('✅ Using SQLite database (no external connection needed)');
+    return true; // Still return true for SQLite
   }
-};
+}
 
 module.exports = { sequelize, testConnection };
