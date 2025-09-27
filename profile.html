@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-2xl">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold">User Profile</h1>
+            <div>
+                <a href="dashboard.html" class="bg-blue-500 text-white px-4 py-2 rounded mr-2">Dashboard</a>
+                <button id="logoutBtn" class="bg-red-500 text-white px-4 py-2 rounded">Logout</button>
+            </div>
+        </div>
+
+        <!-- Profile Information -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Profile Information</h2>
+            <form id="profileForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Name</label>
+                    <input type="text" id="profileName" class="w-full p-2 border rounded" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Email</label>
+                    <input type="email" id="profileEmail" class="w-full p-2 border rounded" required>
+                </div>
+                <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Update Profile</button>
+            </form>
+        </div>
+
+        <!-- Change Password -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Change Password</h2>
+            <form id="passwordForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Current Password</label>
+                    <input type="password" id="currentPassword" class="w-full p-2 border rounded" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">New Password</label>
+                    <input type="password" id="newPassword" class="w-full p-2 border rounded" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Confirm New Password</label>
+                    <input type="password" id="confirmPassword" class="w-full p-2 border rounded" required>
+                </div>
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Change Password</button>
+            </form>
+        </div>
+
+        <!-- Admin Section (only show if admin) -->
+        <div id="adminSection" class="bg-white rounded-lg shadow p-6 mt-6 hidden">
+            <h2 class="text-xl font-semibold mb-4">User Management</h2>
+            <button onclick="showCreateUserModal()" class="bg-purple-500 text-white px-4 py-2 rounded mb-4">
+                Create New User
+            </button>
+            <div id="usersList"></div>
+        </div>
+    </div>
+
+    <!-- Create User Modal -->
+    <div id="createUserModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
+        <div class="bg-white p-6 rounded-lg w-96">
+            <h3 class="text-lg font-semibold mb-4">Create New User</h3>
+            <form id="createUserForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Name</label>
+                    <input type="text" id="newUserName" class="w-full p-2 border rounded" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Email</label>
+                    <input type="email" id="newUserEmail" class="w-full p-2 border rounded" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Password</label>
+                    <input type="password" id="newUserPassword" class="w-full p-2 border rounded" required>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="hideCreateUserModal()" class="bg-gray-500 text-white px-4 py-2 rounded">Cancel</button>
+                    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Create User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api';
+        let currentUser = JSON.parse(localStorage.getItem('userData') || '{}');
+
+        // Check authentication
+        if (!localStorage.getItem('authToken')) {
+            window.location.href = 'login.html';
+        }
+
+        // Load user data
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('profileName').value = currentUser.name || '';
+            document.getElementById('profileEmail').value = currentUser.email || '';
+            
+            // Show admin section if user is admin
+            if (currentUser.email === 'admin@example.com') {
+                document.getElementById('adminSection').classList.remove('hidden');
+                loadUsersList();
+            }
+        });
+
+        // Update profile
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('profileName').value;
+            const email = document.getElementById('profileEmail').value;
+
+            try {
+                const response = await fetch(API_BASE + '/user/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('authToken'),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, email })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Profile updated successfully!');
+                    // Update stored user data
+                    currentUser.name = name;
+                    currentUser.email = email;
+                    localStorage.setItem('userData', JSON.stringify(currentUser));
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error updating profile');
+            }
+        });
+
+        // Change password
+        document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (newPassword !== confirmPassword) {
+                alert('New passwords do not match');
+                return;
+            }
+
+            try {
+                const response = await fetch(API_BASE + '/user/password', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('authToken'),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ currentPassword, newPassword })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Password changed successfully!');
+                    document.getElementById('passwordForm').reset();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error changing password');
+            }
+        });
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userData');
+            window.location.href = 'login.html';
+        });
+
+        // Admin functions
+        async function loadUsersList() {
+            try {
+                const response = await fetch(API_BASE + '/admin/users', {
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('authToken')
+                    }
+                });
+
+                const data = await response.json();
+                displayUsers(data.users);
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        function displayUsers(users) {
+            const container = document.getElementById('usersList');
+            container.innerHTML = users.map(user => `
+                <div class="flex justify-between items-center p-3 border-b">
+                    <div>
+                        <div class="font-medium">${user.name}</div>
+                        <div class="text-sm text-gray-600">${user.email}</div>
+                    </div>
+                    <button onclick="deleteUser(${user.id})" class="bg-red-500 text-white px-3 py-1 rounded text-sm">
+                        Delete
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function showCreateUserModal() {
+            document.getElementById('createUserModal').classList.remove('hidden');
+        }
+
+        function hideCreateUserModal() {
+            document.getElementById('createUserModal').classList.add('hidden');
+        }
+
+        document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('newUserName').value;
+            const email = document.getElementById('newUserEmail').value;
+            const password = document.getElementById('newUserPassword').value;
+
+            try {
+                const response = await fetch(API_BASE + '/admin/users', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('authToken'),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, email, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('User created successfully!');
+                    hideCreateUserModal();
+                    document.getElementById('createUserForm').reset();
+                    loadUsersList();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error creating user');
+            }
+        });
+
+        async function deleteUser(userId) {
+            if (!confirm('Are you sure you want to delete this user?')) return;
+
+            try {
+                const response = await fetch(API_BASE + '/admin/users/' + userId, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('authToken')
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('User deleted successfully!');
+                    loadUsersList();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error deleting user');
+            }
+        }
+
+
+        
+    </script>
+</body>
+</html>

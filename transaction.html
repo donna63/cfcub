@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction History - Union Bank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/auth.js"></script>
+    <style>
+        :root {
+            --gradient-primary: linear-gradient(135deg, hsl(218, 50%, 27%), hsl(218, 50%, 35%));
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            overflow-x: hidden;
+        }
+
+        .banking-card {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+        }
+
+        .transaction-item {
+            transition: var(--transition-smooth);
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+
+        .transaction-item:hover {
+            background-color: #f8fafc;
+        }
+
+        .transaction-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+        }
+
+        .deposit {
+            color: #10b981;
+        }
+
+        .withdrawal {
+            color: #ef4444;
+        }
+
+        .filter-btn {
+            transition: var(--transition-smooth);
+        }
+
+        .filter-btn.active {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .animate-in {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+
+        /* Balance Display */
+        .balance-container {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+
+        .balance-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+        }
+
+        .balance-amount {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #10b981;
+        }
+
+        /* Pagination Styles */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 2rem;
+            padding: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .page-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            margin: 0 4px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            background: white;
+            color: #4b5563;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .page-btn:hover:not(.disabled):not(.active) {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+        }
+
+        .page-btn.active {
+            background: var(--gradient-primary);
+            border-color: hsl(218, 50%, 27%);
+            color: white;
+        }
+
+        .page-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            margin: 0 1rem;
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .balance-amount {
+                font-size: 2rem;
+            }
+            
+            .pagination {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            
+            .page-info {
+                order: -1;
+                width: 100%;
+                text-align: center;
+                margin-bottom: 0.5rem;
+            }
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            border: 4px solid #f3f4f6;
+            border-left: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50">
+    <!-- Navigation Header -->
+    <nav class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="dashboard.html" class="text-blue-600 hover:text-blue-800 font-semibold">
+                        &larr; Back to Dashboard
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="userName" class="text-sm text-gray-700">Loading...</span>
+                    <button onclick="logout()" class="text-sm text-red-600 hover:text-red-800 font-medium">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Transaction History</h1>
+            <p class="text-gray-600 mt-2" id="transactionSubtitle">Loading your transactions...</p>
+        </div>
+
+        <!-- Balance Display -->
+        <div class="balance-container">
+            <div class="balance-title">Current Balance</div>
+            <div class="balance-amount" id="totalBalance">Loading...</div>
+            <div class="text-sm text-gray-500 mt-2" id="accountNumber">Account: Loading...</div>
+        </div>
+
+        <!-- Filters -->
+        <div class="banking-card p-4 mb-6">
+            <div class="flex flex-wrap gap-2">
+                <button class="filter-btn active px-4 py-2 rounded-md text-sm font-medium transition-colors" data-filter="all">
+                    All Transactions
+                </button>
+                <button class="filter-btn px-4 py-2 rounded-md text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors" data-filter="deposit">
+                    Deposits
+                </button>
+                <button class="filter-btn px-4 py-2 rounded-md text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors" data-filter="withdrawal">
+                    Withdrawals
+                </button>
+            </div>
+        </div>
+
+        <!-- Transaction List -->
+        <div class="banking-card overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-xl font-semibold text-gray-800">All Transactions</h2>
+                <div class="text-sm text-gray-500" id="pageInfo">Loading...</div>
+            </div>
+            <div id="transactionList">
+                <div class="loading-spinner"></div>
+                <p class="text-center text-gray-500 mt-2">Loading transactions...</p>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="pagination" id="pagination">
+                <!-- Pagination buttons will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Icons for different transaction types
+        const icons = {
+            deposit: 'M12 6v6m0 0v6m0-6h6m-6 0H6',
+            withdrawal: 'M12 6v6m0 0v6m0-6h6m-6 0H6',
+            transfer: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4'
+        };
+
+        let currentPage = 1;
+        const transactionsPerPage = 10;
+        let currentFilter = 'all';
+        let allTransactions = [];
+
+        // Function to load transaction data from backend
+        async function loadTransactionData() {
+            try {
+                const transactionData = await getTransactionHistory();
+                
+                // Update balance and account info
+                document.getElementById('totalBalance').textContent = 
+                    '$' + parseFloat(transactionData.account_balance).toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                
+                document.getElementById('accountNumber').textContent = 
+                    'Account: ' + (document.getElementById('accountNumber').textContent.includes('Loading') 
+                        ? 'Primary Account' 
+                        : document.getElementById('accountNumber').textContent.split(': ')[1]);
+                
+                document.getElementById('transactionSubtitle').textContent = 
+                    `${transactionData.total_count} transactions found`;
+                
+                // Store all transactions
+                allTransactions = transactionData.transactions;
+                
+                // Render transactions
+                renderTransactions(currentPage, currentFilter);
+                
+            } catch (error) {
+                console.error('Error loading transaction data:', error);
+                document.getElementById('transactionList').innerHTML = `
+                    <div class="p-8 text-center text-gray-500">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                        <p class="mt-4">Error loading transactions: ${error.message}</p>
+                        <button onclick="loadTransactionData()" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                            Try Again
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Function to render transactions for a specific page
+        function renderTransactions(page = 1, filter = 'all') {
+            const transactionList = document.getElementById('transactionList');
+            
+            // Filter transactions
+            const filteredTransactions = filter === 'all' 
+                ? allTransactions 
+                : allTransactions.filter(t => t.type === filter);
+            
+            // Calculate pagination
+            const totalPages = Math.ceil(filteredTransactions.length / transactionsPerPage);
+            const startIndex = (page - 1) * transactionsPerPage;
+            const endIndex = Math.min(startIndex + transactionsPerPage, filteredTransactions.length);
+            const pageTransactions = filteredTransactions.slice(startIndex, endIndex);
+            
+            // Update page info
+            document.getElementById('pageInfo').textContent = 
+                `Page ${page} of ${totalPages} • ${filteredTransactions.length} transactions`;
+            
+            if (pageTransactions.length === 0) {
+                transactionList.innerHTML = `
+                    <div class="p-8 text-center text-gray-500">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <p class="mt-4">No ${filter === 'all' ? '' : filter + ' '}transactions found.</p>
+                    </div>
+                `;
+                
+                renderPagination(1, 1);
+                return;
+            }
+            
+            // Render transactions
+            let transactionsHTML = '';
+            pageTransactions.forEach((transaction, index) => {
+                const isDeposit = transaction.type === 'deposit';
+                const iconBgColor = isDeposit ? 'bg-green-100' : 'bg-red-100';
+                const iconColor = isDeposit ? 'text-green-600' : 'text-red-600';
+                const amountClass = isDeposit ? 'deposit' : 'withdrawal';
+                const amountSign = isDeposit ? '+' : '-';
+                
+                const transactionDate = new Date(transaction.date);
+                const formattedDate = transactionDate.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+                
+                const formattedTime = transactionDate.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                transactionsHTML += `
+                    <div class="transaction-item px-6 py-4 animate-in" style="animation-delay: ${index * 0.05}s">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="transaction-icon ${iconBgColor}">
+                                    <svg class="h-5 w-5 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${icons[transaction.type] || icons.deposit}"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="font-medium text-gray-900">${transaction.description}</h3>
+                                    <p class="text-sm text-gray-500">${formattedDate} at ${formattedTime}</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-semibold ${amountClass}">
+                                    ${amountSign}$${parseFloat(transaction.amount).toLocaleString('en-US', {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    })}
+                                </p>
+                                <p class="text-xs text-gray-500 capitalize">${transaction.type}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            transactionList.innerHTML = transactionsHTML;
+            renderPagination(page, totalPages);
+        }
+
+        // Function to render pagination buttons
+        function renderPagination(currentPage, totalPages) {
+            const paginationContainer = document.getElementById('pagination');
+            paginationContainer.innerHTML = '';
+            
+            if (totalPages <= 1) return;
+            
+            // Previous button
+            const prevButton = document.createElement('button');
+            prevButton.className = `page-btn ${currentPage === 1 ? 'disabled' : ''}`;
+            prevButton.innerHTML = '&laquo;';
+            prevButton.disabled = currentPage === 1;
+            prevButton.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTransactions(currentPage, currentFilter);
+                }
+            });
+            paginationContainer.appendChild(prevButton);
+            
+            // Page buttons
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageButton = document.createElement('button');
+                pageButton.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+                pageButton.textContent = i;
+                pageButton.addEventListener('click', () => {
+                    currentPage = i;
+                    renderTransactions(currentPage, currentFilter);
+                });
+                paginationContainer.appendChild(pageButton);
+            }
+            
+            // Next button
+            const nextButton = document.createElement('button');
+            nextButton.className = `page-btn ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextButton.innerHTML = '&raquo;';
+            nextButton.disabled = currentPage === totalPages;
+            nextButton.addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderTransactions(currentPage, currentFilter);
+                }
+            });
+            paginationContainer.appendChild(nextButton);
+        }
+
+        // Initialize transaction page
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check authentication
+            const user = checkAuth();
+            if (user) {
+                document.getElementById('userName').textContent = user.name;
+                loadTransactionData();
+            }
+            
+            // Add event listeners to filter buttons
+            document.querySelectorAll('.filter-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(btn => {
+                        btn.classList.remove('active', 'text-white');
+                        btn.classList.add('bg-gray-100', 'text-gray-700');
+                    });
+                    
+                    this.classList.remove('bg-gray-100', 'text-gray-700');
+                    this.classList.add('active', 'text-white');
+                    
+                    currentFilter = this.getAttribute('data-filter');
+                    currentPage = 1;
+                    renderTransactions(currentPage, currentFilter);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

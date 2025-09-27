@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Union Bank</title>
+    <meta name="description" content="Sign in to your Union Bank account securely. Access your accounts, transfers, payments, and more with our secure online banking platform.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="canonical" href="/login.html">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: 'hsl(218, 50%, 27%)',
+                            foreground: 'hsl(0, 0%, 98%)',
+                            hover: 'hsl(218, 50%, 22%)'
+                        },
+                        secondary: {
+                            DEFAULT: 'hsl(210, 40%, 96%)',
+                            foreground: 'hsl(222.2, 84%, 4.9%)'
+                        },
+                        accent: {
+                            DEFAULT: 'hsl(43, 96%, 56%)',
+                            foreground: 'hsl(222.2, 84%, 4.9%)'
+                        },
+                        background: 'hsl(0, 0%, 100%)',
+                        foreground: 'hsl(222.2, 84%, 4.9%)',
+                        card: {
+                            DEFAULT: 'hsl(0, 0%, 100%)',
+                            foreground: 'hsl(222.2, 84%, 4.9%)'
+                        },
+                        border: 'hsl(214.3, 31.8%, 91.4%)',
+                        muted: {
+                            DEFAULT: 'hsl(210, 40%, 96%)',
+                            foreground: 'hsl(215.4, 16.3%, 46.9%)'
+                        },
+                        destructive: {
+                            DEFAULT: 'hsl(0, 84%, 60%)',
+                            foreground: 'hsl(210, 40%, 98%)'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --gradient-primary: linear-gradient(135deg, hsl(218, 50%, 27%), hsl(218, 50%, 35%));
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .dark {
+            --background: hsl(222.2, 84%, 4.9%);
+            --foreground: hsl(210, 40%, 98%);
+            --card: hsl(222.2, 84%, 4.9%);
+            --card-foreground: hsl(210, 40%, 98%);
+            --primary: hsl(218, 50%, 35%);
+            --primary-foreground: hsl(210, 40%, 98%);
+            --secondary: hsl(217.2, 32.6%, 17.5%);
+            --secondary-foreground: hsl(210, 40%, 98%);
+            --muted: hsl(217.2, 32.6%, 17.5%);
+            --muted-foreground: hsl(215, 20.2%, 65.1%);
+            --accent: hsl(43, 96%, 56%);
+            --accent-foreground: hsl(222.2, 84%, 4.9%);
+            --border: hsl(217.2, 32.6%, 17.5%);
+        }
+
+        .hero-button {
+            background: var(--gradient-primary);
+            color: hsl(210, 40%, 98%);
+            padding: 0.75rem 2rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            transition: var(--transition-smooth);
+            border: none;
+            cursor: pointer;
+        }
+
+        .hero-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .banking-card {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid hsl(214.3, 31.8%, 91.4%);
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .dark .banking-card {
+            background: rgba(34, 41, 56, 0.95);
+            border: 1px solid hsl(217.2, 32.6%, 17.5%);
+        }
+
+        .bank-input {
+            border: 1px solid hsl(214.3, 31.8%, 91.4%);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            transition: var(--transition-smooth);
+        }
+
+        .bank-input:focus {
+            outline: none;
+            border-color: hsl(218, 50%, 27%);
+            box-shadow: 0 0 0 3px rgba(64, 90, 137, 0.1);
+        }
+
+        .dark .bank-input {
+            background: hsl(217.2, 32.6%, 17.5%);
+            border: 1px solid hsl(217.2, 32.6%, 17.5%);
+            color: hsl(210, 40%, 98%);
+        }
+    </style>
+</head>
+<body class="bg-background text-foreground transition-colors duration-300">
+    <div class="min-h-screen bg-background flex items-center justify-center py-12 px-4">
+        <div class="w-full max-w-md">
+            <div class="text-center mb-8">
+                <div class="flex items-center justify-center space-x-2 mb-4">
+                    <!-- <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: var(--gradient-primary)">
+                        <span class="text-white font-bold text-xl">U</span>
+                    </div>
+                    <span class="text-2xl font-bold text-primary">Union Bank</span> -->
+                    <img src="50thlogo-hires.png" alt="">
+                </div>
+                <h1 class="text-3xl font-bold text-foreground mb-2">Welcome Back</h1>
+                <p class="text-muted-foreground">Sign in to your account to continue</p>
+            </div>
+
+            <div class="banking-card">
+                <div class="p-6">
+                    <h2 class="text-center text-2xl font-semibold text-card-foreground mb-6">
+                        Sign In
+                    </h2>
+                    
+                    <form id="loginForm" class="space-y-6">
+                        <!-- Email Field -->
+                        <div class="space-y-2">
+                            <label for="email" class="text-sm font-medium text-card-foreground">
+                                Email Address
+                            </label>
+                            <div class="relative">
+                                <svg class="absolute left-3 top-3 h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path>
+                                </svg>
+                                <input
+                                    id="email"
+                                    type="email"
+                                    placeholder="Enter your email"
+                                    class="bank-input pl-10 w-full"
+                                    required
+                                />
+                            </div>
+                            <div id="emailError" class="text-sm text-destructive hidden"></div>
+                        </div>
+
+                        <!-- Password Field -->
+                        <div class="space-y-2">
+                            <label for="password" class="text-sm font-medium text-card-foreground">
+                                Password
+                            </label>
+                            <div class="relative">
+                                <svg class="absolute left-3 top-3 h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                </svg>
+                                <input
+                                    id="password"
+                                    type="password"
+                                    placeholder="Enter your password"
+                                    class="bank-input pl-10 pr-10 w-full"
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    id="togglePassword"
+                                    class="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                                >
+                                    <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                    <svg id="eyeOffIcon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div id="passwordError" class="text-sm text-destructive hidden"></div>
+                        </div>
+
+                        <!-- Remember Me & Forgot Password -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <input
+                                    id="remember"
+                                    type="checkbox"
+                                    class="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2"
+                                />
+                                <label for="remember" class="text-sm text-card-foreground">
+                                    Remember me
+                                </label>
+                            </div>
+                            <a href="#forgot" class="text-sm text-primary hover:underline">
+                                Forgot password?
+                            </a>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button
+                            type="submit"
+                            class="w-full hero-button justify-center"
+                        >
+                            Sign In
+                        </button>
+
+                        <!-- Divider -->
+                        <div class="relative">
+                            <div class="absolute inset-0 flex items-center">
+                                <span class="w-full border-t border-border" />
+                            </div>
+                            <div class="relative flex justify-center text-xs uppercase">
+                                <span class="bg-card px-2 text-muted-foreground">Or</span>
+                            </div>
+                        </div>
+
+                        <!-- Sign Up Link -->
+                        <div class="text-center">
+                            <p class="text-sm text-muted-foreground">
+                                Don't have an account?
+                                <a href="#signup" class="text-primary hover:underline font-medium">
+                                    Open an account
+                                </a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Security Notice -->
+            <div class="mt-6 text-center">
+                <p class="text-xs text-muted-foreground">
+                    Your information is protected with bank-level security.
+                    <br />
+                    We will never ask for your credentials via email or phone.
+                </p>
+            </div>
+
+            <!-- Back to Home -->
+            <div class="mt-4 text-center">
+                <a href="index.html" class="text-sm text-primary hover:underline">
+                    ← Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script src="js/auth.js"></script>
+<script>
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const submitBtn = this.querySelector('button[type="submit"]');
+    
+    // Show loading
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = 'Signing In...';
+    
+    try {
+        // Use the correct function name - just login(), not authAPI.login()
+        const result = await login(email, password);
+        
+        // Success - redirect based on role
+        if (result.user.role === 'admin') {
+            window.location.href = 'admin.html';
+        } else {
+            window.location.href = 'dashboard.html';
+        }
+        
+    } catch (error) {
+        // Show error
+        alert('Login failed: ' + error.message);
+        
+        // Reset button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Sign In';
+    }
+});
+
+// Password visibility toggle
+document.getElementById('togglePassword').addEventListener('click', function() {
+    const passwordInput = document.getElementById('password');
+    const eyeIcon = document.getElementById('eyeIcon');
+    const eyeOffIcon = document.getElementById('eyeOffIcon');
+    
+    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+    passwordInput.setAttribute('type', type);
+    
+    eyeIcon.classList.toggle('hidden');
+    eyeOffIcon.classList.toggle('hidden');
+});
+</script>
+
+    <!-- <script src="js/auth.js"></script>
+<script>
+
+    
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const submitBtn = this.querySelector('button[type="submit"]');
+    
+    // Show loading
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
+    
+    try {
+        // Try to login
+        await authAPI.login(email, password);
+        
+        // Success - redirect to dashboard
+        window.location.href = 'dashboard.html';
+        
+    } catch (error) {
+        // Show error
+        alert(error.message);
+        
+        // Reset button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Sign In';
+    }
+});
+</script> -->
+    
+
+    <!-- Add this before closing </body> tag in login.html -->
+<!-- <script src="js/auth.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const loginForm = document.getElementById('loginForm');
+    
+    loginForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        
+        try {
+            const result = await login(email, password);
+            
+            // Redirect based on user role
+            if (result.user.role === 'admin') {
+                window.location.href = 'admin.html';
+            } else {
+                window.location.href = 'dashboard.html';
+            }
+        } catch (error) {
+            alert('Login failed: ' + error.message);
+        }
+    });
+});
+</script> -->
+    <!-- Add this before closing </body> tag in your login page -->
+<!-- <script src="js/auth.js"></script>
+<script>
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    
+    try {
+        const result = await login(email, password);
+        
+        // Redirect based on user role
+        if (result.user.role === 'admin') {
+            window.location.href = 'admin.html';
+        } else {
+            window.location.href = 'dashboard.html';
+        }
+    } catch (error) {
+        alert('Login failed: ' + error.message);
+    }
+});
+</script> -->
+
+    <!-- <script src="script.js"></script>
+    <script>
+        // Login-specific functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('loginForm');
+            const togglePassword = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eyeIcon');
+            const eyeOffIcon = document.getElementById('eyeOffIcon');
+
+            // Toggle password visibility
+            togglePassword.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                
+                eyeIcon.classList.toggle('hidden');
+                eyeOffIcon.classList.toggle('hidden');
+            });
+
+            // Form validation and submission
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const emailError = document.getElementById('emailError');
+                const passwordError = document.getElementById('passwordError');
+                
+                // Reset errors
+                emailError.classList.add('hidden');
+                passwordError.classList.add('hidden');
+                
+                let isValid = true;
+
+                // Email validation
+                if (!email) {
+                    emailError.textContent = 'Email address is required';
+                    emailError.classList.remove('hidden');
+                    isValid = false;
+                } else if (!/\S+@\S+\.\S+/.test(email)) {
+                    emailError.textContent = 'Please enter a valid email address';
+                    emailError.classList.remove('hidden');
+                    isValid = false;
+                }
+
+                // Password validation
+                if (!password) {
+                    passwordError.textContent = 'Password is required';
+                    passwordError.classList.remove('hidden');
+                    isValid = false;
+                } else if (password.length < 6) {
+                    passwordError.textContent = 'Password must be at least 6 characters';
+                    passwordError.classList.remove('hidden');
+                    isValid = false;
+                }
+
+                if (isValid) {
+                    // Simulate login success
+                    alert('Login successful!');
+                    // In a real app, you would redirect to the dashboard
+                    window.location.href = 'dashboard.html';
+                }
+            });
+        });
+    </script> -->
+</body>
+</html>

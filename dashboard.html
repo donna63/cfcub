@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Union Bank</title>
+    <meta name="description" content="Manage your Union Bank accounts, view balances, transfer money, and access all your banking services from your secure dashboard.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="canonical" href="/dashboard.html">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: 'hsl(218, 50%, 27%)',
+                            foreground: 'hsl(0, 0%, 98%)',
+                            hover: 'hsl(218, 50%, 22%)'
+                        },
+                        secondary: {
+                            DEFAULT: 'hsl(210, 40%, 96%)',
+                            foreground: 'hsl(222.2, 84%, 4.9%)'
+                        },
+                        accent: {
+                            DEFAULT: 'hsl(43, 96%, 56%)',
+                            foreground: 'hsl(222.2, 84%, 4.9%)'
+                        },
+                        background: 'hsl(0, 0%, 100%)',
+                        foreground: 'hsl(222.2, 84%, 4.9%)',
+                        card: {
+                            DEFAULT: 'hsl(0, 0%, 100%)',
+                            foreground: 'hsl(222.2, 84%, 4.9%)'
+                        },
+                        border: 'hsl(214.3, 31.8%, 91.4%)',
+                        muted: {
+                            DEFAULT: 'hsl(210, 40%, 96%)',
+                            foreground: 'hsl(215.4, 16.3%, 46.9%)'
+                        },
+                        destructive: {
+                            DEFAULT: 'hsl(0, 84%, 60%)',
+                            foreground: 'hsl(210, 40%, 98%)'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --gradient-primary: linear-gradient(135deg, hsl(218, 50%, 27%), hsl(218, 50%, 35%));
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .dark {
+            --background: hsl(222.2, 84%, 4.9%);
+            --foreground: hsl(210, 40%, 98%);
+            --card: hsl(222.2, 84%, 4.9%);
+            --card-foreground: hsl(210, 40%, 98%);
+            --primary: hsl(218, 50%, 35%);
+            --primary-foreground: hsl(210, 40%, 98%);
+            --secondary: hsl(217.2, 32.6%, 17.5%);
+            --secondary-foreground: hsl(210, 40%, 98%);
+            --muted: hsl(217.2, 32.6%, 17.5%);
+            --muted-foreground: hsl(215, 20.2%, 65.1%);
+            --accent: hsl(43, 96%, 56%);
+            --accent-foreground: hsl(222.2, 84%, 4.9%);
+            --border: hsl(217.2, 32.6%, 17.5%);
+        }
+
+        .hero-button {
+            background: var(--gradient-primary);
+            color: hsl(210, 40%, 98%);
+            padding: 0.75rem 2rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            transition: var(--transition-smooth);
+            border: none;
+            cursor: pointer;
+        }
+
+        .hero-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .banking-card {
+            background: rgba(224, 219, 219, 0.95);
+            border: 1px solid hsl(214.3, 31.8%, 91.4%);
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px 5px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .dark .banking-card {
+            background: rgba(34, 41, 56, 0.95);
+            border: 1px solid hsl(217.2, 32.6%, 17.5%);
+        }
+
+        .bank-input {
+            border: 1px solid hsl(214.3, 31.8%, 91.4%);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            transition: var(--transition-smooth);
+        }
+
+        .bank-input:focus {
+            outline: none;
+            border-color: hsl(218, 50%, 27%);
+            box-shadow: 0 0 0 3px rgba(64, 90, 137, 0.1);
+        }
+
+        .dark .bank-input {
+            background: hsl(217.2, 32.6%, 17.5%);
+            border: 1px solid hsl(217.2, 32.6%, 17.5%);
+            color: hsl(210, 40%, 98%);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 50;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-link.active {
+            background: var(--gradient-primary);
+            color: white;
+        }
+        
+        /* Sidebar Animation Styles */
+        .sidebar {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 40;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .sidebar.open {
+            transform: translateX(0);
+        }
+        
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 30;
+        }
+        
+        .sidebar-overlay.open {
+            display: block;
+        }
+        
+        .menu-button {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 50;
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+        
+        .menu-button:hover {
+            transform: scale(1.05);
+        }
+        
+        @media (max-width: 768px) {
+            .menu-button {
+                display: block;
+            }
+            
+            .sidebar {
+                width: 280px;
+            }
+            
+            main {
+                margin-left: 0 !important;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .sidebar {
+                transform: translateX(0);
+                position: relative;
+            }
+            
+            .sidebar-overlay {
+                display: none !important;
+            }
+        }
+        
+        /* Animation for sidebar items */
+        .sidebar-item {
+            opacity: 0;
+            transform: translateX(-20px);
+            animation: slideIn 0.5s forwards;
+        }
+        
+        @keyframes slideIn {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        /* Stagger animation for items */
+        .sidebar-item:nth-child(1) { animation-delay: 0.1s; }
+        .sidebar-item:nth-child(2) { animation-delay: 0.15s; }
+        .sidebar-item:nth-child(3) { animation-delay: 0.2s; }
+        .sidebar-item:nth-child(4) { animation-delay: 0.25s; }
+        .sidebar-item:nth-child(5) { animation-delay: 0.3s; }
+        .sidebar-item:nth-child(6) { animation-delay: 0.35s; }
+        .sidebar-item:nth-child(7) { animation-delay: 0.4s; }
+    </style>
+</head>
+<body class="bg-background text-foreground transition-colors duration-300">
+    <!-- Mobile Menu Button -->
+    <button class="menu-button" id="menuButton">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+    </button>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Header -->
+    <header class="bg-background border-b border-border">
+        <div class="px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center">
+                        <!-- <span class="text-white font-bold text-lg">U</span> -->
+                    </div>
+                    <img style="width: 100px;" src="50thlogo-hires.png" alt="">
+                    <!-- <span class="text-xl font-bold text-primary">Union Bank</span> -->
+                </div>
+
+              <!-- User Info & Actions -->
+<div class="flex items-center space-x-4">
+    <button id="darkModeToggle" class="p-2 rounded-md text-foreground hover:text-primary transition-colors">
+        <svg id="sunIcon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+        <svg id="moonIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+    </button>
+    <div class="text-sm">
+        <p class="font-medium text-foreground" id="headerUserName">Loading...</p>
+    </div>
+    <a href="#" id="logoutLink" class="text-sm text-primary hover:underline">Logout</a>
+</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="sidebar w-64 bg-secondary border-r border-border" id="sidebar">
+            <nav class="mt-5 px-2">
+                <div class="space-y-1">
+                    <a href="dashboard.html" class="sidebar-link active group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors sidebar-item">
+                        <svg class="mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6H8V5z"></path>
+                        </svg>
+                        Dashboard
+                    </a>
+
+                    <a href="acct.html" class="sidebar-link group flex items-center px-2 py-2 text-sm font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors sidebar-item">
+                        <svg class="mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
+                        Accounts
+                    </a>
+
+                    <a href="#" class="sidebar-link group flex items-center px-2 py-2 text-sm font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors sidebar-item" onclick="openTransferModal()">
+                        <svg class="mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                        </svg>
+                        Transfers
+                    </a>
+
+                    <a href="transaction.html" class="sidebar-link  group flex items-center px-2 py-2 text-sm font-medium rounded-md text-muted-foreground transition-colors sidebar-item">
+                    <svg class="mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                    Transactions
+                </a>
+
+<!-- 
+                    <a href="#" class="sidebar-link group flex items-center px-2 py-2 text-sm font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors sidebar-item">
+                        <svg class="mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                        Payments
+                    </a> -->
+<!-- 
+                    <a href="#" class="sidebar-link group flex items-center px-2 py-2 text-sm font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors sidebar-item">
+                        <svg class="mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        Settings
+                    </a> -->
+
+                    <a href="index.html" class="sidebar-link group flex items-center px-2 py-2 text-sm font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors sidebar-item">
+                        <svg class="mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                        Logout
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto ml-0 md:ml-64 transition-all duration-300" id="mainContent">
+            <div class="py-6">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <!-- Welcome Header -->
+                    <div class="mb-8">
+                        <h1 class="text-3xl font-bold text-foreground">Welcome back, Mauro!</h1>
+                        <p class="mt-2 text-muted-foreground">Here's your account overview</p>
+                    </div>
+
+                    <!-- Account Summary Cards -->
+                    <!-- Account Summary Cards -->
+<div class="grid grid-cols-1 transition-colors gap-6 mb-8  boxShadow">
+    <div class="banking-card p-10 bg-blue-950 text-white">
+        <div class="flex items-center justify-between ">
+            <div>
+                <p class="text-sm font-medium text-muted-foreground">Account Balance</p>
+                <p class="text-3xl font-bold text-white" id="mainBalance">Loading...</p>
+                <p class="text-xs text-muted-foreground" id="mainAccountNumber">Account number loading...</p>
+            </div>
+            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599-1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                </svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+                    <!-- Quick Actions -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold text-foreground mb-4">Quick Actions</h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <button onclick="openTransferModal()" class="banking-card p-4 text-left hover:shadow-lg transition-shadow">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background: var(--gradient-primary)">
+                                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-foreground">Transfer Money</p>
+                                        <p class="text-sm text-muted-foreground">Send to any account</p>
+                                    </div>
+                                </div>
+                            </button>
+
+                            <button class="banking-card p-4 text-left hover:shadow-lg transition-shadow">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-accent-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-foreground">Pay Bills</p>
+                                        <p class="text-sm text-muted-foreground">Manage payments</p>
+                                    </div>
+                                </div>
+                            </button>
+
+                            <button class="banking-card p-4 text-left hover:shadow-lg transition-shadow">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-foreground">View Statements</p>
+                                        <p class="text-sm text-muted-foreground">Download PDFs</p>
+                                    </div>
+                                </div>
+                            </button>
+
+                            <a href="contact.html" class="banking-card p-4 text-left hover:shadow-lg transition-shadow">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-foreground">Get Support</p>
+                                        <p class="text-sm text-muted-foreground">24/7 help center</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Recent Transactions -->
+                    <div class="banking-card">
+                        <div class="px-6 py-4 border-b border-border flex justify-between" >
+                            <h2 class="text-xl font-semibold text-foreground">Recent Transactions</h2>
+                            <a href="transaction.html"><h2 class="text-blue-500 ">view all</h2></a>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-border">
+                                <thead class="bg-muted">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Description</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Amount</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-card divide-y divide-border">
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">sep 15, 2025</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Executive Salary Deposit </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">+$125,000.00</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">$1,200,000</td>
+                                    </tr>
+
+                                        <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">sep 14, 2025</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Stock Dividend Payment </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">+$87,500.00</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">$706,343.21</td>
+                                    </tr>
+                                    <!-- <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Dec 14, 2024</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Online Purchase - Amazon</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">-$127.43</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">$7,343.21</td>
+                                    </tr> -->
+                                    <!-- <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Sep 13, 2025</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">ATM Withdrawal</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">-$200.00</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">$7,470.64</td>
+                                    </tr> -->
+
+                                        <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">sep 13, 2025</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Business Revenue - Q4 </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">+$225,000.00</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">$20,843.21</td>
+                                    </tr>
+                                    <!-- <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Dec 12, 2024</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Transfer to Savings</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">-$1,000.00</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">$7,670.64</td>
+                                    </tr> -->
+
+                                        <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">sep 12, 2025</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Real Estate Investment Return </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">+$2150,000.00</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">$100,543.21</td>
+                                    </tr>
+                                    <!-- <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Dec 11, 2024</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Gas Station - Shell</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">-$45.23</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">$8,670.64</td>
+                                    </tr> -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Transfer Modal -->
+        <!-- Transfer Modal -->
+    <div id="transferModal" class="modal">
+        <div class="banking-card max-w-md w-full mx-4">
+            <div class="px-6 py-4 border-b border-border">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-foreground">Quick Transfer</h3>
+                    <button onclick="closeTransferModal()" class="text-muted-foreground hover:text-foreground">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <form id="transferForm" class="p-6 space-y-4">
+                <!-- From Account (showing real balance) -->
+                <div>
+                    <label for="fromAccount" class="block text-sm font-medium text-card-foreground mb-2">From Account</label>
+                    <div class="bank-input w-full p-3 bg-muted/50">
+                        <div class="flex justify-between items-center">
+                            <span class="font-medium">Primary Account</span>
+                            <span class="text-green-600 font-semibold" id="currentBalanceDisplay">Loading...</span>
+                        </div>
+                        <div class="text-xs text-muted-foreground mt-1" id="currentAccountNumber">Account: Loading...</div>
+                    </div>
+                    <input type="hidden" id="fromAccount" value="primary" required>
+                </div>
+
+                <!-- Transfer Type -->
+                <div>
+                    <label class="block text-sm font-medium text-card-foreground mb-2">Transfer To</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" id="internalTransferBtn" class="py-2 px-3 border border-border rounded-md text-sm font-medium bg-primary text-white transition-colors">
+                            Internal Account
+                        </button>
+                        <button type="button" id="externalTransferBtn" class="py-2 px-3 border border-border rounded-md text-sm font-medium bg-muted text-foreground hover:bg-muted/80 transition-colors">
+                            External Bank
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Internal Transfer Fields (hidden by default) -->
+                <div id="internalTransferFields" class="space-y-4">
+                    <div>
+                        <label for="toInternalAccount" class="block text-sm font-medium text-card-foreground mb-2">To Internal Account</label>
+                        <select id="toInternalAccount" class="bank-input w-full">
+                            <option value="">Select internal account</option>
+                            <option value="savings">Savings Account</option>
+                            <option value="business">Business Account</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- External Transfer Fields (hidden initially) -->
+                <div id="externalTransferFields" class="space-y-4 hidden">
+                    <div>
+                        <label for="recipientName" class="block text-sm font-medium text-card-foreground mb-2">Recipient Name</label>
+                        <input type="text" id="recipientName" class="bank-input w-full" placeholder="Enter recipient's full name">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="routingNumber" class="block text-sm font-medium text-card-foreground mb-2">Routing Number</label>
+                            <input type="text" id="routingNumber" class="bank-input w-full" placeholder="123456789" maxlength="9" pattern="[0-9]{9}">
+                        </div>
+                        <div>
+                            <label for="accountNumber" class="block text-sm font-medium text-card-foreground mb-2">Account Number</label>
+                            <input type="text" id="accountNumber" class="bank-input w-full" placeholder="Enter account number">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="bankName" class="block text-sm font-medium text-card-foreground mb-2">Bank Name</label>
+                        <input type="text" id="bankName" class="bank-input w-full" placeholder="Enter bank name">
+                    </div>
+                </div>
+
+                <!-- Amount Field -->
+                <div>
+                    <label for="amount" class="block text-sm font-medium text-card-foreground mb-2">Amount</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-3 text-muted-foreground">$</span>
+                        <input 
+                            type="number" 
+                            id="amount" 
+                            class="bank-input w-full pl-8" 
+                            placeholder="0.00"
+                            step="0.01"
+                            min="0.01"
+                            required
+                        />
+                    </div>
+                    <div class="flex justify-between text-xs text-muted-foreground mt-1">
+                        <span>Available: <span id="availableBalance" class="font-medium">$0.00</span></span>
+                        <button type="button" onclick="setMaxAmount()" class="text-primary hover:underline">Transfer max</button>
+                    </div>
+                    <div id="amountError" class="text-sm text-destructive hidden mt-1"></div>
+                </div>
+
+                <!-- Memo/Description -->
+                <div>
+                    <label for="memo" class="block text-sm font-medium text-card-foreground mb-2">Description</label>
+                    <input 
+                        type="text" 
+                        id="memo" 
+                        class="bank-input w-full" 
+                        placeholder="Enter a note for this transfer"
+                        maxlength="100"
+                    />
+                </div>
+
+                <!-- Transfer Details Summary -->
+                <div id="transferSummary" class="bg-muted/30 p-3 rounded-md hidden">
+                    <h4 class="font-medium text-sm mb-2">Transfer Summary</h4>
+                    <div class="text-xs space-y-1">
+                        <div class="flex justify-between">
+                            <span>From:</span>
+                            <span id="summaryFrom">Primary Account</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>To:</span>
+                            <span id="summaryTo">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Amount:</span>
+                            <span id="summaryAmount">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closeTransferModal()" class="px-4 py-2 border border-border text-foreground rounded-md hover:bg-muted transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="hero-button">
+                        Initiate Transfer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- <script>
+        // Dashboard-specific functionality
+        function openTransferModal() {
+            document.getElementById('transferModal').classList.add('show');
+        }
+
+        function closeTransferModal() {
+            document.getElementById('transferModal').classList.remove('show');
+            document.getElementById('transferForm').reset();
+            document.getElementById('amountError').classList.add('hidden');
+        }
+
+        // Transfer form validation and submission
+        document.getElementById('transferForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const fromAccount = document.getElementById('fromAccount').value;
+            const toAccount = document.getElementById('toAccount').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const memo = document.getElementById('memo').value;
+            const amountError = document.getElementById('amountError');
+            
+            // Reset errors
+            amountError.classList.add('hidden');
+            
+            let isValid = true;
+
+            // Validation
+            if (!fromAccount || !toAccount) {
+                alert('Please select both accounts');
+                isValid = false;
+            }
+
+            if (fromAccount === toAccount) {
+                alert('From and To accounts must be different');
+                isValid = false;
+            }
+
+            if (!amount || amount <= 0) {
+                amountError.textContent = 'Please enter a valid amount greater than 0';
+                amountError.classList.remove('hidden');
+                isValid = false;
+            }
+
+            // Check available balance (mock validation)
+            if (fromAccount === 'checking' && amount > 12543.21) {
+                amountError.textContent = 'Insufficient funds in checking account';
+                amountError.classList.remove('hidden');
+                isValid = false;
+            }
+
+            if (fromAccount === 'savings' && amount > 8921.45) {
+                amountError.textContent = 'Insufficient funds in savings account';
+                amountError.classList.remove('hidden');
+                isValid = false;
+            }
+
+            if (isValid) {
+                // Simulate successful transfer
+                alert(`Debit Card needed to make a transfer!\n\nAmount: $${amount.toFixed(2)}\nFrom: ${fromAccount}\nTo: ${toAccount}\n${memo ? 'Memo: ' + memo : ''}`);
+                closeTransferModal();
+            }
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('transferModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeTransferModal();
+            }
+        });
+
+        // Dark mode toggle functionality
+        document.getElementById('darkModeToggle').addEventListener('click', function() {
+            document.documentElement.classList.toggle('dark');
+            const sunIcon = document.getElementById('sunIcon');
+            const moonIcon = document.getElementById('moonIcon');
+            
+            if (document.documentElement.classList.contains('dark')) {
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            } else {
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            }
+        });
+
+        // Sidebar functionality
+        const menuButton = document.getElementById('menuButton');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const mainContent = document.getElementById('mainContent');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+            sidebarOverlay.classList.toggle('open');
+        }
+
+        menuButton.addEventListener('click', toggleSidebar);
+        sidebarOverlay.addEventListener('click', toggleSidebar);
+
+        // Close sidebar when clicking on a link (mobile)
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth < 769) {
+                    toggleSidebar();
+                }
+            });
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 769) {
+                sidebar.classList.add('open');
+                sidebarOverlay.classList.remove('open');
+            } else {
+                sidebar.classList.remove('open');
+            }
+        });
+
+        // Initialize sidebar state
+        if (window.innerWidth >= 769) {
+            sidebar.classList.add('open');
+        }
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+    const user = checkAuth();
+    if (user) {
+        // User is authenticated, load their data
+        loadDashboardData(user);
+    }
+    
+    // Add logout functionality
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+        logout();
+    });
+});
+
+
+//    // Check authentication on page load
+// document.addEventListener('DOMContentLoaded', function() {
+//     const token = localStorage.getItem('authToken');
+//     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    
+//     if (!token) {
+//         window.location.href = 'login.html';
+//         return;
+//     }
+    
+//     // Display user name
+//     document.getElementById('userName').textContent = userData.name || userData.email;
+    
+//     // Load dashboard data
+//     loadDashboardData();
+// });
+
+// async function loadDashboardData() {
+//     const token = localStorage.getItem('authToken');
+    
+//     try {
+//         const response = await fetch('http://localhost:3000/api/dashboard', {
+//             headers: {
+//                 'Authorization': 'Bearer ' + token,
+//                 'Content-Type': 'application/json'
+//             }
+//         });
+
+//         if (response.status === 401) {
+//             // Token expired, redirect to login
+//             localStorage.removeItem('authToken');
+//             localStorage.removeItem('userData');
+//             window.location.href = 'login.html';
+//             return;
+//         }
+
+//         if (!response.ok) {
+//             throw new Error('Failed to load dashboard data');
+//         }
+
+//         const data = await response.json();
+        
+//         // Update your dashboard with real data
+//         document.getElementById('totalBalance').textContent = 
+//             '$' + data.totalBalance.toLocaleString('en-US', {minimumFractionDigits: 2});
+            
+//         // Update account balances
+//         data.accounts.forEach(account => {
+//             const element = document.getElementById(account.account_type + 'Balance');
+//             if (element) {
+//                 element.textContent = '$' + account.balance.toLocaleString('en-US', {minimumFractionDigits: 2});
+//             }
+//         });
+        
+//         // Display recent transactions
+//         displayRecentTransactions(data.recentTransactions);
+        
+//     } catch (error) {
+//         console.error('Error loading dashboard:', error);
+//     }
+// }
+
+// function displayRecentTransactions(transactions) {
+//     const container = document.getElementById('recentTransactions');
+//     if (!container) return;
+    
+//     container.innerHTML = transactions.map(transaction => `
+//         <div class="transaction-item">
+//             <div class="transaction-description">${transaction.description}</div>
+//             <div class="transaction-amount ${transaction.type}">
+//                 ${transaction.type === 'credit' ? '+' : '-'}$${transaction.amount.toLocaleString('en-US', {minimumFractionDigits: 2})}
+//             </div>
+//             <div class="transaction-date">${new Date(transaction.date).toLocaleDateString()}</div>
+//         </div>
+//     `).join('');
+// }
+
+        
+// const token = localStorage.getItem("token");
+// const user = JSON.parse(localStorage.getItem("user"));
+
+// if (!token) {
+//   window.location.href = "login.html"; // force login
+// } else {
+//   document.body.innerHTML += `<h1>Welcome ${user.name}</h1>`;
+// }
+    </script> -->
+
+    <script src="js/auth.js"></script>
+<script>
+    // Dashboard-specific functionality
+    function openTransferModal() {
+        document.getElementById('transferModal').classList.add('show');
+    }
+
+    function closeTransferModal() {
+        document.getElementById('transferModal').classList.remove('show');
+        document.getElementById('transferForm').reset();
+        document.getElementById('amountError').classList.add('hidden');
+    }
+
+    // Transfer form validation and submission
+    document.getElementById('transferForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const fromAccount = document.getElementById('fromAccount').value;
+        const toAccount = document.getElementById('toAccount').value;
+        const amount = parseFloat(document.getElementById('amount').value);
+        const memo = document.getElementById('memo').value;
+        const amountError = document.getElementById('amountError');
+        
+        // Reset errors
+        amountError.classList.add('hidden');
+        
+        let isValid = true;
+
+        // Validation
+        if (!fromAccount || !toAccount) {
+            alert('Please select both accounts');
+            isValid = false;
+        }
+
+        if (fromAccount === toAccount) {
+            alert('From and To accounts must be different');
+            isValid = false;
+        }
+
+        if (!amount || amount <= 0) {
+            amountError.textContent = 'Please enter a valid amount greater than 0';
+            amountError.classList.remove('hidden');
+            isValid = false;
+        }
+
+        if (isValid) {
+            // Simulate successful transfer
+            alert(`Debit Card needed to make a transfer!\n\nAmount: $${amount.toFixed(2)}\nFrom: ${fromAccount}\nTo: ${toAccount}\n${memo ? 'Memo: ' + memo : ''}`);
+            closeTransferModal();
+        }
+    });
+
+    // Close modal when clicking outside
+    document.getElementById('transferModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeTransferModal();
+        }
+    });
+
+    // Dark mode toggle functionality
+    document.getElementById('darkModeToggle').addEventListener('click', function() {
+        document.documentElement.classList.toggle('dark');
+        const sunIcon = document.getElementById('sunIcon');
+        const moonIcon = document.getElementById('moonIcon');
+        
+        if (document.documentElement.classList.contains('dark')) {
+            sunIcon.classList.remove('hidden');
+            moonIcon.classList.add('hidden');
+        } else {
+            sunIcon.classList.add('hidden');
+            moonIcon.classList.remove('hidden');
+        }
+    });
+
+    // Sidebar functionality
+    const menuButton = document.getElementById('menuButton');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const mainContent = document.getElementById('mainContent');
+
+    function toggleSidebar() {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('open');
+    }
+
+    menuButton.addEventListener('click', toggleSidebar);
+    sidebarOverlay.addEventListener('click', toggleSidebar);
+
+    // Close sidebar when clicking on a link (mobile)
+    document.querySelectorAll('.sidebar-link').forEach(link => {
+        link.addEventListener('click', function() {
+            if (window.innerWidth < 769) {
+                toggleSidebar();
+            }
+        });
+    });
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 769) {
+            sidebar.classList.add('open');
+            sidebarOverlay.classList.remove('open');
+        } else {
+            sidebar.classList.remove('open');
+        }
+    });
+
+    // Initialize sidebar state
+    if (window.innerWidth >= 769) {
+        sidebar.classList.add('open');
+    }
+
+
+        // Transfer Modal Functionality
+    let currentBalance = 0;
+    let currentAccountNumber = '';
+
+    function openTransferModal() {
+        // Load current balance and account info
+        updateTransferModalBalance();
+        document.getElementById('transferModal').classList.add('show');
+        
+        // Reset form to internal transfer
+        showInternalTransfer();
+        updateTransferSummary();
+    }
+
+    function closeTransferModal() {
+        document.getElementById('transferModal').classList.remove('show');
+        document.getElementById('transferForm').reset();
+        document.getElementById('amountError').classList.add('hidden');
+        document.getElementById('transferSummary').classList.add('hidden');
+    }
+
+    function updateTransferModalBalance() {
+        const balanceElement = document.getElementById('mainBalance');
+        const accountNumberElement = document.getElementById('mainAccountNumber');
+        
+        if (balanceElement && accountNumberElement) {
+            currentBalance = parseFloat(balanceElement.textContent.replace('$', '').replace(/,/g, '')) || 0;
+            currentAccountNumber = accountNumberElement.textContent.replace('Account number: ', '') || 'Loading...';
+            
+            document.getElementById('currentBalanceDisplay').textContent = `$${currentBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('currentAccountNumber').textContent = `Account: ${currentAccountNumber}`;
+            document.getElementById('availableBalance').textContent = `$${currentBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        }
+    }
+
+    function showInternalTransfer() {
+        document.getElementById('internalTransferBtn').classList.add('bg-primary', 'text-white');
+        document.getElementById('externalTransferBtn').classList.remove('bg-primary', 'text-white');
+        document.getElementById('internalTransferBtn').classList.remove('bg-muted', 'text-foreground');
+        document.getElementById('externalTransferBtn').classList.add('bg-muted', 'text-foreground');
+        
+        document.getElementById('internalTransferFields').classList.remove('hidden');
+        document.getElementById('externalTransferFields').classList.add('hidden');
+        
+        updateTransferSummary();
+    }
+
+    function showExternalTransfer() {
+        document.getElementById('externalTransferBtn').classList.add('bg-primary', 'text-white');
+        document.getElementById('internalTransferBtn').classList.remove('bg-primary', 'text-white');
+        document.getElementById('externalTransferBtn').classList.remove('bg-muted', 'text-foreground');
+        document.getElementById('internalTransferBtn').classList.add('bg-muted', 'text-foreground');
+        
+        document.getElementById('externalTransferFields').classList.remove('hidden');
+        document.getElementById('internalTransferFields').classList.add('hidden');
+        
+        updateTransferSummary();
+    }
+
+    function setMaxAmount() {
+        const maxAmount = currentBalance - 0.01; // Leave $0.01 in account
+        document.getElementById('amount').value = maxAmount.toFixed(2);
+        updateTransferSummary();
+    }
+
+    function updateTransferSummary() {
+        const amount = parseFloat(document.getElementById('amount').value) || 0;
+        const memo = document.getElementById('memo').value;
+        
+        if (amount > 0) {
+            document.getElementById('transferSummary').classList.remove('hidden');
+            
+            // Determine transfer type and recipient
+            let recipientInfo = '';
+            if (document.getElementById('internalTransferFields').classList.contains('hidden')) {
+                // External transfer
+                const recipientName = document.getElementById('recipientName').value || 'External Account';
+                const bankName = document.getElementById('bankName').value || 'External Bank';
+                recipientInfo = `${recipientName} (${bankName})`;
+            } else {
+                // Internal transfer
+                const toAccount = document.getElementById('toInternalAccount').value;
+                recipientInfo = toAccount ? `${toAccount.charAt(0).toUpperCase() + toAccount.slice(1)} Account` : 'Select account';
+            }
+            
+            document.getElementById('summaryFrom').textContent = 'Primary Account';
+            document.getElementById('summaryTo').textContent = recipientInfo;
+            document.getElementById('summaryAmount').textContent = `$${amount.toFixed(2)}`;
+        } else {
+            document.getElementById('transferSummary').classList.add('hidden');
+        }
+    }
+
+    // Transfer form validation and submission
+    document.getElementById('transferForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const amount = parseFloat(document.getElementById('amount').value);
+        const memo = document.getElementById('memo').value;
+        const amountError = document.getElementById('amountError');
+        const isExternalTransfer = document.getElementById('externalTransferFields').classList.contains('hidden') === false;
+        
+        // Reset errors
+        amountError.classList.add('hidden');
+        
+        let isValid = true;
+
+        // Basic validation
+        if (!amount || amount <= 0) {
+            amountError.textContent = 'Please enter a valid amount greater than 0';
+            amountError.classList.remove('hidden');
+            isValid = false;
+        }
+
+        if (amount > currentBalance) {
+            amountError.textContent = 'Insufficient funds in your account';
+            amountError.classList.remove('hidden');
+            isValid = false;
+        }
+
+        if (amount < 1.00) {
+            amountError.textContent = 'Minimum transfer amount is $1.00';
+            amountError.classList.remove('hidden');
+            isValid = false;
+        }
+
+        // External transfer validation
+        if (isExternalTransfer) {
+            const recipientName = document.getElementById('recipientName').value;
+            const routingNumber = document.getElementById('routingNumber').value;
+            const accountNumber = document.getElementById('accountNumber').value;
+            const bankName = document.getElementById('bankName').value;
+            
+            if (!recipientName) {
+                alert('Please enter recipient name');
+                isValid = false;
+            }
+            
+            if (!routingNumber || !/^\d{9}$/.test(routingNumber)) {
+                alert('Please enter a valid 9-digit routing number');
+                isValid = false;
+            }
+            
+            if (!accountNumber) {
+                alert('Please enter recipient account number');
+                isValid = false;
+            }
+            
+            if (!bankName) {
+                alert('Please enter bank name');
+                isValid = false;
+            }
+        } else {
+            // Internal transfer validation
+            const toAccount = document.getElementById('toInternalAccount').value;
+            if (!toAccount) {
+                alert('Please select an internal account to transfer to');
+                isValid = false;
+            }
+        }
+
+        if (isValid) {
+            // Prepare transfer details
+            const transferDetails = {
+                amount: amount,
+                memo: memo,
+                type: isExternalTransfer ? 'external' : 'internal',
+                timestamp: new Date().toISOString()
+            };
+
+            if (isExternalTransfer) {
+                transferDetails.recipient = {
+                    name: document.getElementById('recipientName').value,
+                    routingNumber: document.getElementById('routingNumber').value,
+                    accountNumber: document.getElementById('accountNumber').value,
+                    bankName: document.getElementById('bankName').value
+                };
+            } else {
+                transferDetails.toAccount = document.getElementById('toInternalAccount').value;
+            }
+
+            // Simulate transfer processing
+            const transferMessage = isExternalTransfer ? 
+                `External transfer initiated!\n\nAmount: $${amount.toFixed(2)}\nTo: ${transferDetails.recipient.name}\nBank: ${transferDetails.recipient.bankName}\nRouting: ${transferDetails.recipient.routingNumber}\nAccount: ${transferDetails.recipient.accountNumber}\n${memo ? 'Memo: ' + memo : ''}` :
+                `Internal transfer initiated!\n\nAmount: $${amount.toFixed(2)}\nFrom: Primary Account\nTo: ${transferDetails.toAccount} Account\n${memo ? 'Memo: ' + memo : ''}`;
+
+            alert(transferMessage + '\n\nYou need a debt card to transfer!.');
+            closeTransferModal();
+            
+            // In a real app, you would make an API call here
+            // await apiCall('/transfer', { method: 'POST', body: JSON.stringify(transferDetails) });
+        }
+    });
+
+    // Add event listeners for transfer type buttons
+    document.getElementById('internalTransferBtn').addEventListener('click', showInternalTransfer);
+    document.getElementById('externalTransferBtn').addEventListener('click', showExternalTransfer);
+
+    // Add real-time validation and summary updates
+    document.getElementById('amount').addEventListener('input', updateTransferSummary);
+    document.getElementById('memo').addEventListener('input', updateTransferSummary);
+    document.getElementById('toInternalAccount').addEventListener('change', updateTransferSummary);
+    document.getElementById('recipientName').addEventListener('input', updateTransferSummary);
+    document.getElementById('routingNumber').addEventListener('input', updateTransferSummary);
+    document.getElementById('accountNumber').addEventListener('input', updateTransferSummary);
+    document.getElementById('bankName').addEventListener('input', updateTransferSummary);
+
+
+
+    // Dashboard Data Loading
+ async function loadDashboardData() {
+    try {
+        const dashboardData = await getDashboardData();
+        
+        console.log('Dashboard API Response:', dashboardData); // Debug log
+        
+        // Update user info
+        const headerUserName = document.getElementById('headerUserName');
+        const welcomeName = document.querySelector('h1.text-3xl');
+        if (headerUserName) headerUserName.textContent = dashboardData.user.name;
+        if (welcomeName) welcomeName.innerHTML = `Welcome back, <span>${dashboardData.user.name}</span>!`;
+        
+        // Update account balance with real data
+        const accountBalance = parseFloat(dashboardData.account.balance);
+        console.log('Account Balance from API:', accountBalance); // Debug log
+        
+        const formattedBalance = accountBalance.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+        
+        // Update the balance display
+        const balanceElement = document.getElementById('mainBalance');
+        const accountNumberElement = document.getElementById('mainAccountNumber');
+        
+        if (balanceElement) {
+            balanceElement.textContent = `$${formattedBalance}`;
+            console.log('Balance updated to:', balanceElement.textContent);
+        }
+        if (accountNumberElement) {
+            accountNumberElement.textContent = dashboardData.account.account_number;
+        }
+        
+        // Update recent transactions table
+        updateTransactionsTable(dashboardData.recent_transactions);
+        
+    } catch (error) {
+        console.error('Error loading dashboard data:', error);
+        alert('Error loading dashboard data: ' + error.message);
+    }
+}
+
+  function updateTransactionsTable(transactions) {
+    const tbody = document.querySelector('.overflow-x-auto tbody');
+    
+    if (transactions.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="px-6 py-4 text-center text-muted-foreground">
+                    No transactions yet
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = transactions.map(transaction => `
+        <tr class="border-b hover:bg-muted/50">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                ${new Date(transaction.date).toLocaleDateString()}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                ${transaction.description}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                transaction.type === 'deposit' ? 'text-green-600' : 'text-red-600'
+            }">
+                ${transaction.type === 'deposit' ? '+' : '-'}$${parseFloat(transaction.amount).toFixed(2)}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                $${parseFloat(transaction.balance || transaction.amount).toFixed(2)}
+            </td>
+        </tr>
+    `).join('');
+
+}
+
+    // Initialize dashboard when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        const user = checkAuth();
+        if (user) {
+            // Update user name in header
+            const userNameElement = document.querySelector('header .text-sm .font-medium');
+            if (userNameElement) {
+                userNameElement.textContent = user.name;
+            }
+            
+            // Load real data from backend
+            loadDashboardData();
+        }
+        
+        // Add logout functionality to all logout links
+        document.querySelectorAll('a[href="index.html"]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                logout();
+            });
+        });
+        
+        // Update sidebar active state
+        const currentPage = window.location.pathname.split('/').pop() || 'dashboard.html';
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === currentPage || 
+                (currentPage === 'dashboard.html' && link.textContent.includes('Dashboard'))) {
+                link.classList.add('active');
+            }
+        });
+    });
+
+    // Update account balance with real data
+const accountBalance = parseFloat(dashboardData.account.balance);
+const formattedBalance = accountBalance.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+});
+
+// Update the balance display
+const balanceElement = document.getElementById('mainBalance');
+const accountNumberElement = document.getElementById('mainAccountNumber');
+
+if (balanceElement) {
+    balanceElement.textContent = `$${formattedBalance}`;
+    console.log('Balance updated to:', balanceElement.textContent);
+}
+if (accountNumberElement) {
+    accountNumberElement.textContent = dashboardData.account.account_number;
+}
+    
+</script>
+</body>
+</html>
