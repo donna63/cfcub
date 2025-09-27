@@ -244,3 +244,140 @@ app.get('/api/users', (req, res) => {
   const usersWithoutPasswords = users.map(({ password, ...user }) => user);
   res.json(usersWithoutPasswords);
 });
+
+// Add these after your existing routes
+
+// Simple in-memory storage
+let users = [
+  {
+    id: 1,
+    name: 'Admin User',
+    email: 'admin@unionbank.com',
+    password: 'admin123',
+    role: 'admin',
+    accountNumber: '1000001',
+    balance: 10000.00,
+    createdAt: new Date().toISOString()
+  }
+];
+
+let transactions = [];
+
+// Admin stats endpoint
+app.get('/api/admin/stats', (req, res) => {
+  const totalUsers = users.length;
+  const totalAccounts = users.length;
+  const totalBalance = users.reduce((sum, user) => sum + user.balance, 0);
+  
+  res.json({
+    totalUsers,
+    totalAccounts,
+    totalBalance: totalBalance.toFixed(2)
+  });
+});
+
+// Get all users endpoint
+app.get('/api/admin/users', (req, res) => {
+  // Return users without passwords
+  const usersWithoutPasswords = users.map(({ password, ...user }) => ({
+    ...user,
+    Account: {
+      account_number: user.accountNumber,
+      balance: user.balance
+    }
+  }));
+  
+  res.json({ users: usersWithoutPasswords });
+});
+
+// Create user endpoint (already exists, but make sure it's correct)
+app.post('/api/users', (req, res) => {
+  try {
+    const { name, email, password, initialBalance = 0 } = req.body;
+    
+    console.log('Creating user:', { name, email });
+    
+    // Check if user already exists
+    if (users.find(u => u.email === email)) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+    
+    // Create new user
+    const newUser = {
+      id: users.length + 1,
+      name,
+      email,
+      password,
+      role: 'user',
+      accountNumber: `1000${String(users.length + 1).padStart(3, '0')}`,
+      balance: parseFloat(initialBalance) || 0,
+      createdAt: new Date().toISOString()
+    };
+    
+    users.push(newUser);
+    
+    // Return user without password
+    const { password: _, ...userWithoutPassword } = newUser;
+    
+    res.json({
+      message: 'User created successfully',
+      user: userWithoutPassword
+    });
+    
+  } catch (error) {
+    console.error('User creation error:', error);
+    res.status(500).json({ message: 'Error creating user' });
+  }
+});
+
+// Add transaction endpoint
+app.post('/api/admin/transactions', (req, res) => {
+  try {
+    const { userId, type, amount, description } = req.body;
+    
+    const user = users.find(u => u.id === parseInt(userId));
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    const transactionAmount = parseFloat(amount);
+    
+    // Update user balance
+    if (type === 'deposit') {
+      user.balance += transactionAmount;
+    } else if (type === 'withdrawal') {
+      if (user.balance < transactionAmount) {
+        return res.status(400).json({ message: 'Insufficient funds' });
+      }
+      user.balance -= transactionAmount;
+    }
+    
+    // Add transaction
+    const transaction = {
+      id: transactions.length + 1,
+      userId: parseInt(userId),
+      type,
+      amount: transactionAmount,
+      description,
+      date: new Date().toISOString(),
+      balance_after: user.balance
+    };
+    
+    transactions.push(transaction);
+    
+    res.json({
+      message: 'Transaction completed successfully',
+      new_balance: user.balance.toFixed(2)
+    });
+    
+  } catch (error) {
+    console.error('Transaction error:', error);
+    res.status(500).json({ message: 'Error processing transaction' });
+  }
+});
+
+// Get user transactions endpoint
+app.get('/api/admin/transactions/:userId', (req, res) => {
+  const userTransactions = transactions.filter(t => t.userId === parseInt(req.params.userId));
+  res.json({ transactions: userTransactions });
+});
