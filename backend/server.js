@@ -1,63 +1,52 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { testConnection } = require('./config/database');
-const { syncDatabase } = require('./models');
+
+console.log('✅ Starting server...');
+console.log('✅ Environment:', process.env.NODE_ENV);
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// Middleware - More permissive CORS for production
-app.use(cors({
-    origin: true, // Allow all origins in production (we'll restrict later)
-    credentials: true
-}));
-
+// Basic middleware
+app.use(cors());
 app.use(express.json());
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/admin', require('./routes/admin'));
-app.use('/api/users', require('./routes/users'));
+// Test route
+app.get('/', (req, res) => {
+    res.json({ 
+        message: 'Banking API Server is running!',
+        status: 'OK',
+        timestamp: new Date().toISOString()
+    });
+});
 
-// Health check endpoint (important for Render)
+// Health check
 app.get('/health', (req, res) => {
-    res.status(200).json({ 
+    res.json({ 
         status: 'OK', 
-        message: 'Banking API is running!', 
-        timestamp: new Date().toISOString(),
+        message: 'Server is healthy!',
         environment: process.env.NODE_ENV 
     });
 });
 
-// Root endpoint
-app.get('/', (req, res) => {
-    res.json({ 
-        message: 'Banking API Server is running!',
-        endpoints: {
-            health: '/health',
-            auth: '/api/auth',
-            users: '/api/users',
-            admin: '/api/admin'
-        },
-        documentation: 'API documentation available at /api endpoints'
-    });
+// Simple test route
+app.get('/api/test', (req, res) => {
+    res.json({ message: 'API is working!' });
 });
 
 // Start server
-app.listen(PORT, '0.0.0.0', async () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🌐 Server URL: http://0.0.0.0:${PORT}`);
-    
-    try {
-        await testConnection();
-        console.log('✅ Database connection successful');
-        
-        await syncDatabase();
-        console.log('✅ Database synced successfully');
-    } catch (error) {
-        console.error('❌ Database setup failed:', error.message);
-        console.log('⚠️  Server starting without database connection');
-    }
+    console.log(`📍 Server URL: http://0.0.0.0:${PORT}`);
+    console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+    console.error('❌ Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
 });
