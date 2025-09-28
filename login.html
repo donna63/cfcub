@@ -261,7 +261,7 @@
     </div>
 
 
-    <script src="js/auth.js"></script>
+    <!-- <script src="js/auth.js"></script>
 <script>
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -314,10 +314,38 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         submitBtn.innerHTML = 'Sign In';
     }
 });
+</script> -->
+
+
+<script src="js/auth.js"></script>
+<script>
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const submitBtn = this.querySelector('button[type="submit"]');
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
+    
+    try {
+        const result = await authSystem.login(email, password);
+        
+        if (result.success) {
+            if (result.user.role === 'admin') {
+                window.location.href = 'admin.html';
+            } else {
+                window.location.href = 'dashboard.html';
+            }
+        }
+    } catch (error) {
+        alert(error.message);
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Sign In';
+    }
+});
 </script>
-
-
-
 
 <!--  
 <script src="js/auth.js"></script>
