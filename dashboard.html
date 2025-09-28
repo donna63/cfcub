@@ -878,7 +878,7 @@
 // }
     </script> -->
 
-    <script src="js/auth.js"></script>
+    <!-- <script src="js/auth.js"></script>
 <script>
     // Dashboard-specific functionality
     function openTransferModal() {
@@ -1330,6 +1330,394 @@ if (accountNumberElement) {
     accountNumberElement.textContent = dashboardData.account.account_number;
 }
     
+</script> -->
+<!-- <script src="js/auth.js"></script>
+<script>
+    // Dashboard-specific functionality
+    function openTransferModal() {
+        document.getElementById('transferModal').classList.add('show');
+    }
+
+    function closeTransferModal() {
+        document.getElementById('transferModal').classList.remove('show');
+        document.getElementById('transferForm').reset();
+        document.getElementById('amountError').classList.add('hidden');
+    }
+
+    // ... (keep all your existing modal and UI functions)
+
+    // Dashboard Data Loading
+    async function loadDashboardData() {
+        try {
+            const user = checkAuth();
+            if (!user) return;
+
+            console.log('Current user:', user);
+            
+            // Update user info immediately
+            const headerUserName = document.getElementById('headerUserName');
+            const welcomeName = document.querySelector('h1.text-3xl');
+            if (headerUserName) headerUserName.textContent = user.name;
+            if (welcomeName) welcomeName.innerHTML = `Welcome back, <span>${user.name}</span>!`;
+            
+            // Update account balance with user data
+            const accountBalance = parseFloat(user.balance) || 0;
+            const formattedBalance = accountBalance.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            
+            // Update the balance display
+            const balanceElement = document.getElementById('mainBalance');
+            const accountNumberElement = document.getElementById('mainAccountNumber');
+            
+            if (balanceElement) {
+                balanceElement.textContent = `$${formattedBalance}`;
+            }
+            if (accountNumberElement) {
+                accountNumberElement.textContent = `Account number: ${user.accountNumber || '1000001'}`;
+            }
+            
+            // Try to load additional data from backend
+            try {
+                const dashboardData = await getDashboardData();
+                console.log('Dashboard API Response:', dashboardData);
+                
+                // Update with real data if available
+                if (dashboardData.account) {
+                    const realBalance = parseFloat(dashboardData.account.balance) || accountBalance;
+                    const realFormattedBalance = realBalance.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                    
+                    if (balanceElement) balanceElement.textContent = `$${realFormattedBalance}`;
+                    if (accountNumberElement) accountNumberElement.textContent = `Account number: ${dashboardData.account.account_number}`;
+                }
+                
+                // Update transactions if available
+                if (dashboardData.recent_transactions) {
+                    updateTransactionsTable(dashboardData.recent_transactions);
+                }
+            } catch (apiError) {
+                console.log('Using fallback data:', apiError.message);
+                // Use basic user data if API fails
+            }
+            
+        } catch (error) {
+            console.error('Error loading dashboard data:', error);
+        }
+    }
+
+    function updateTransactionsTable(transactions) {
+        const tbody = document.querySelector('.overflow-x-auto tbody');
+        
+        if (!transactions || transactions.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="px-6 py-4 text-center text-muted-foreground">
+                        No transactions yet
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = transactions.map(transaction => `
+            <tr class="border-b hover:bg-muted/50">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                    ${new Date(transaction.date).toLocaleDateString()}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                    ${transaction.description}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                    transaction.type === 'deposit' ? 'text-green-600' : 'text-red-600'
+                }">
+                    ${transaction.type === 'deposit' ? '+' : '-'}$${parseFloat(transaction.amount).toFixed(2)}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                    $${parseFloat(transaction.balance || transaction.amount).toFixed(2)}
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // Initialize dashboard when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        const user = checkAuth();
+        if (user) {
+            loadDashboardData();
+        }
+        
+        // Add logout functionality
+        document.getElementById('logoutLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            logout();
+        });
+    });
+</script> -->
+
+
+
+
+<script src="js/auth.js"></script>
+<script>
+   // Dashboard-specific functionality
+class Dashboard {
+    constructor() {
+        this.init();
+    }
+
+    init() {
+        this.checkAuthentication();
+        this.setupEventListeners();
+        this.loadDashboardData();
+    }
+
+    checkAuthentication() {
+        if (!authSystem.requireAuth()) {
+            return;
+        }
+        
+        const user = authSystem.getCurrentUser();
+        if (user) {
+            this.updateUserInfo(user);
+        }
+    }
+
+    updateUserInfo(user) {
+        // Update header user name
+        const headerUserName = document.getElementById('headerUserName');
+        if (headerUserName) {
+            headerUserName.textContent = user.name;
+        }
+
+        // Update welcome message
+        const welcomeName = document.querySelector('h1.text-3xl');
+        if (welcomeName) {
+            welcomeName.innerHTML = `Welcome back, <span class="text-primary">${user.name}</span>!`;
+        }
+    }
+
+    async loadDashboardData() {
+        try {
+            console.log('Loading dashboard data...');
+            const dashboardData = await authSystem.getDashboardData();
+            
+            this.updateAccountInfo(dashboardData.account);
+            this.updateTransactions(dashboardData.recent_transactions);
+            
+        } catch (error) {
+            console.error('Error loading dashboard data:', error);
+            this.showError('Failed to load dashboard data');
+        }
+    }
+
+    updateAccountInfo(account) {
+        const balanceElement = document.getElementById('mainBalance');
+        const accountNumberElement = document.getElementById('mainAccountNumber');
+        
+        if (balanceElement) {
+            balanceElement.textContent = `$${account.balance.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })}`;
+        }
+        
+        if (accountNumberElement) {
+            accountNumberElement.textContent = `Account number: ${account.account_number}`;
+        }
+        
+        console.log('Account info updated:', account);
+    }
+
+    updateTransactions(transactions) {
+        const tbody = document.querySelector('.overflow-x-auto tbody');
+        if (!tbody) return;
+
+        if (!transactions || transactions.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="px-6 py-4 text-center text-muted-foreground">
+                        No transactions yet
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = transactions.map(transaction => `
+            <tr class="border-b hover:bg-muted/50 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                    ${new Date(transaction.date).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric' 
+                    })}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                    ${transaction.description}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                    transaction.type === 'deposit' ? 'text-green-600' : 'text-red-600'
+                }">
+                    ${transaction.type === 'deposit' ? '+' : '-'}$${parseFloat(transaction.amount).toFixed(2)}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                    $${parseFloat(transaction.balance).toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    })}
+                </td>
+            </tr>
+        `).join('');
+
+        console.log('Transactions updated:', transactions);
+    }
+
+    setupEventListeners() {
+        // Dark mode toggle
+        document.getElementById('darkModeToggle').addEventListener('click', this.toggleDarkMode);
+
+        // Logout functionality
+        document.getElementById('logoutLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            authSystem.logout();
+        });
+
+        // Sidebar functionality
+        this.setupSidebar();
+
+        // Transfer modal functionality
+        this.setupTransferModal();
+    }
+
+    toggleDarkMode() {
+        document.documentElement.classList.toggle('dark');
+        const sunIcon = document.getElementById('sunIcon');
+        const moonIcon = document.getElementById('moonIcon');
+        
+        if (document.documentElement.classList.contains('dark')) {
+            sunIcon.classList.remove('hidden');
+            moonIcon.classList.add('hidden');
+        } else {
+            sunIcon.classList.add('hidden');
+            moonIcon.classList.remove('hidden');
+        }
+    }
+
+    setupSidebar() {
+        const menuButton = document.getElementById('menuButton');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        const toggleSidebar = () => {
+            sidebar.classList.toggle('open');
+            sidebarOverlay.classList.toggle('open');
+        };
+
+        if (menuButton) {
+            menuButton.addEventListener('click', toggleSidebar);
+        }
+
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', toggleSidebar);
+        }
+
+        // Close sidebar when clicking on a link (mobile)
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth < 769) {
+                    toggleSidebar();
+                }
+            });
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 769) {
+                sidebar.classList.add('open');
+                sidebarOverlay.classList.remove('open');
+            } else {
+                sidebar.classList.remove('open');
+            }
+        });
+
+        // Initialize sidebar state
+        if (window.innerWidth >= 769) {
+            sidebar.classList.add('open');
+        }
+    }
+
+    setupTransferModal() {
+        // Transfer modal functions
+        window.openTransferModal = () => {
+            this.updateTransferModalBalance();
+            document.getElementById('transferModal').classList.add('show');
+        };
+
+        window.closeTransferModal = () => {
+            document.getElementById('transferModal').classList.remove('show');
+            document.getElementById('transferForm').reset();
+        };
+
+        // Close modal when clicking outside
+        document.getElementById('transferModal').addEventListener('click', (e) => {
+            if (e.target === this) {
+                window.closeTransferModal();
+            }
+        });
+
+        // Transfer form submission
+        document.getElementById('transferForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleTransfer();
+        });
+    }
+
+    updateTransferModalBalance() {
+        const user = authSystem.getCurrentUser();
+        if (!user) return;
+
+        const balanceElement = document.getElementById('mainBalance');
+        if (balanceElement) {
+            const currentBalance = parseFloat(balanceElement.textContent.replace('$', '').replace(/,/g, '')) || user.balance;
+            
+            document.getElementById('currentBalanceDisplay').textContent = 
+                `$${currentBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('availableBalance').textContent = 
+                `$${currentBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        }
+    }
+
+    handleTransfer() {
+        const amount = parseFloat(document.getElementById('amount').value);
+        const memo = document.getElementById('memo').value;
+
+        if (!amount || amount <= 0) {
+            this.showError('Please enter a valid amount');
+            return;
+        }
+
+        // Simulate transfer processing
+        alert(`Transfer initiated!\n\nAmount: $${amount.toFixed(2)}\nMemo: ${memo || 'No memo'}`);
+        window.closeTransferModal();
+    }
+
+    showError(message) {
+        // You can implement a better error notification system here
+        console.error('Dashboard Error:', message);
+        alert(message);
+    }
+}
+
+// Initialize dashboard when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    window.dashboard = new Dashboard();
+});
 </script>
+
+
 </body>
 </html>

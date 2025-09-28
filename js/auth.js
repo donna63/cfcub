@@ -1,117 +1,433 @@
-// API Base URL - Pointing to your backend on port 5001
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? 'http://localhost:5001/api' 
-    : 'https://banking-backend-hqe6.onrender.com/api';
+// // Add these endpoints to your server.js after the existing routes
 
-// Utility function for API calls
-async function apiCall(endpoint, options = {}) {
-    try {
-        const response = await fetch(`${API_BASE}${endpoint}`, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                ...options.headers
-            },
-            ...options
-        });
+// // User dashboard data endpoint
+// app.get('/api/users/dashboard', (req, res) => {
+//     // For demo: return the first non-admin user or use token to identify
+//     const user = users.find(u => u.role === 'user') || users[0];
+//     const userTransactions = transactions.filter(t => t.userId === user.id);
+    
+//     const { password, ...userWithoutPassword } = user;
+    
+//     res.json({
+//         user: userWithoutPassword,
+//         account: {
+//             balance: user.balance,
+//             account_number: user.accountNumber
+//         },
+//         recent_transactions: userTransactions.slice(-5).map(t => ({
+//             date: t.date,
+//             description: t.description,
+//             type: t.type,
+//             amount: t.amount,
+//             balance: t.balance_after
+//         }))
+//     });
+// });
 
-        const data = await response.json();
+// // User account endpoint
+// app.get('/api/users/account', (req, res) => {
+//     const user = users.find(u => u.role === 'user') || users[0];
+//     const { password, ...userData } = user;
+//     res.json(userData);
+// });
+
+// // User transactions endpoint
+// app.get('/api/users/transactions', (req, res) => {
+//     const user = users.find(u => u.role === 'user') || users[0];
+//     const userTransactions = transactions.filter(t => t.userId === user.id);
+//     res.json(userTransactions);
+// });
+
+
+// // js/auth.js - Complete authentication system
+
+// /// js/auth.js - Fixed authentication system
+
+// class AuthSystem {
+//     constructor() {
+//         this.currentUser = null;
+//         this.init();
+//     }
+
+//     init() {
+//         // Check if user is already logged in
+//         this.loadUserSession();
+//     }
+
+//     // Mock user data for demo
+//     get mockUsers() {
+//         return [
+//             {
+//                 id: 1,
+//                 name: 'Mauro',
+//                 email: 'mauro@unionbank.com',
+//                 password: 'password123',
+//                 role: 'user',
+//                 accountNumber: '1000001',
+//                 balance: 1250000.00,
+//                 createdAt: new Date().toISOString()
+//             },
+//             {
+//                 id: 2,
+//                 name: 'Admin User',
+//                 email: 'admin@unionbank.com',
+//                 password: 'admin123',
+//                 role: 'admin',
+//                 accountNumber: '1000002',
+//                 balance: 50000.00,
+//                 createdAt: new Date().toISOString()
+//             }
+//         ];
+//     }
+
+//     // Mock transactions data
+//     get mockTransactions() {
+//         return [
+//             {
+//                 id: 1,
+//                 userId: 1,
+//                 date: '2025-09-15',
+//                 description: 'Executive Salary Deposit',
+//                 type: 'deposit',
+//                 amount: 125000.00,
+//                 balance_after: 1200000.00
+//             },
+//             {
+//                 id: 2,
+//                 userId: 1,
+//                 date: '2025-09-14',
+//                 description: 'Stock Dividend Payment',
+//                 type: 'deposit',
+//                 amount: 87500.00,
+//                 balance_after: 706343.21
+//             },
+//             {
+//                 id: 3,
+//                 userId: 1,
+//                 date: '2025-09-13',
+//                 description: 'Business Revenue - Q4',
+//                 type: 'deposit',
+//                 amount: 225000.00,
+//                 balance_after: 20843.21
+//             },
+//             {
+//                 id: 4,
+//                 userId: 1,
+//                 date: '2025-09-12',
+//                 description: 'Real Estate Investment Return',
+//                 type: 'deposit',
+//                 amount: 150000.00,
+//                 balance_after: 100543.21
+//             }
+//         ];
+//     }
+
+//     async login(email, password) {
+//         return new Promise((resolve, reject) => {
+//             setTimeout(() => {
+//                 const user = this.mockUsers.find(u => u.email === email && u.password === password);
+                
+//                 if (user) {
+//                     // Remove password from stored data
+//                     const { password: _, ...userWithoutPassword } = user;
+//                     this.currentUser = userWithoutPassword;
+                    
+//                     // Store user session
+//                     localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+//                     localStorage.setItem('isLoggedIn', 'true');
+                    
+//                     console.log('Login successful:', this.currentUser);
+//                     resolve({
+//                         success: true,
+//                         user: this.currentUser
+//                     });
+//                 } else {
+//                     reject(new Error('Invalid email or password'));
+//                 }
+//             }, 1000);
+//         });
+//     }
+
+//     logout() {
+//         this.currentUser = null;
+//         localStorage.removeItem('currentUser');
+//         localStorage.removeItem('isLoggedIn');
+//         window.location.href = 'login.html';
+//     }
+
+//     isAuthenticated() {
+//         if (this.currentUser) return true;
         
-        if (!response.ok) {
-            throw new Error(data.message || 'API request failed');
+//         const storedUser = localStorage.getItem('currentUser');
+//         if (storedUser) {
+//             this.currentUser = JSON.parse(storedUser);
+//             return true;
+//         }
+        
+//         return false;
+//     }
+
+//     getCurrentUser() {
+//         if (!this.isAuthenticated()) {
+//             return null;
+//         }
+//         return this.currentUser;
+//     }
+
+//     loadUserSession() {
+//         const isLoggedIn = localStorage.getItem('isLoggedIn');
+//         const storedUser = localStorage.getItem('currentUser');
+        
+//         if (isLoggedIn === 'true' && storedUser) {
+//             this.currentUser = JSON.parse(storedUser);
+//             console.log('User session loaded:', this.currentUser);
+//         }
+//     }
+
+//     requireAuth(redirectTo = 'login.html') {
+//         if (!this.isAuthenticated()) {
+//             window.location.href = redirectTo;
+//             return false;
+//         }
+//         return true;
+//     }
+
+//     async getDashboardData() {
+//         if (!this.isAuthenticated()) {
+//             throw new Error('User not authenticated');
+//         }
+
+//         return new Promise((resolve) => {
+//             setTimeout(() => {
+//                 const userTransactions = this.mockTransactions.filter(t => t.userId === this.currentUser.id);
+                
+//                 const dashboardData = {
+//                     user: this.currentUser,
+//                     account: {
+//                         balance: this.currentUser.balance,
+//                         account_number: this.currentUser.accountNumber
+//                     },
+//                     recent_transactions: userTransactions.slice(-5).map(t => ({
+//                         date: t.date,
+//                         description: t.description,
+//                         type: t.type,
+//                         amount: t.amount,
+//                         balance: t.balance_after
+//                     }))
+//                 };
+                
+//                 console.log('Dashboard data loaded:', dashboardData);
+//                 resolve(dashboardData);
+//             }, 500);
+//         });
+//     }
+// }
+
+// // Create global instance
+// window.authSystem = new AuthSystem();
+
+// // Make functions globally available for backward compatibility
+// window.login = (email, password) => window.authSystem.login(email, password);
+// window.logout = () => window.authSystem.logout();
+// window.checkAuth = () => window.authSystem.isAuthenticated();
+// window.getDashboardData = () => window.authSystem.getDashboardData();
+
+// js/auth.js - Client-side authentication that talks to your backend
+class AuthSystem {
+    constructor() {
+        this.currentUser = null;
+        this.baseURL = ''; // Same origin since we're serving from same server
+        this.init();
+    }
+
+    init() {
+        this.loadUserSession();
+    }
+
+    async login(email, password) {
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (!response.ok) {
+                throw new Error('Invalid email or password');
+            }
+
+            const data = await response.json();
+            this.currentUser = data.user;
+            
+            // Store user session
+            localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+            localStorage.setItem('authToken', data.token);
+            localStorage.setItem('isLoggedIn', 'true');
+            
+            return {
+                success: true,
+                user: this.currentUser
+            };
+        } catch (error) {
+            throw new Error('Login failed: ' + error.message);
+        }
+    }
+
+    logout() {
+        this.currentUser = null;
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('isLoggedIn');
+        window.location.href = '/login.html';
+    }
+
+    isAuthenticated() {
+        if (this.currentUser) return true;
+        
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+            this.currentUser = JSON.parse(storedUser);
+            return true;
         }
         
-        return data;
+        return false;
+    }
+
+    getCurrentUser() {
+        return this.currentUser;
+    }
+
+    loadUserSession() {
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+            this.currentUser = JSON.parse(storedUser);
+        }
+    }
+
+    requireAuth(redirectTo = '/login.html') {
+        if (!this.isAuthenticated()) {
+            window.location.href = redirectTo;
+            return false;
+        }
+        return true;
+    }
+
+    async getDashboardData() {
+        try {
+            const response = await fetch('/api/users/dashboard');
+            if (!response.ok) {
+                throw new Error('Failed to load dashboard data');
+            }
+            return await response.json();
+        } catch (error) {
+            throw new Error('Error loading dashboard: ' + error.message);
+        }
+    }
+}
+
+// Create global instance
+window.authSystem = new AuthSystem();
+
+// ✅ API Call Helper Function
+async function apiCall(endpoint, options = {}) {
+    const baseURL = 'https://banking-backend-hqe6.onrender.com';
+    const url = baseURL + endpoint;
+    
+    const config = {
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        ...options
+    };
+    
+    if (options.body) {
+        config.body = options.body;
+    }
+    
+    try {
+        console.log(`🔄 API Call: ${url}`, config);
+        
+        const response = await fetch(url, config);
+        const responseText = await response.text();
+        
+        console.log(`📡 Response status: ${response.status}`);
+        console.log(`📡 Response text:`, responseText);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${responseText}`);
+        }
+        
+        // Try to parse as JSON, if empty return success
+        if (!responseText) {
+            return { success: true };
+        }
+        
+        return JSON.parse(responseText);
+        
     } catch (error) {
-        console.error('API call error:', error);
+        console.error('❌ API Call Error:', error);
         throw error;
     }
 }
 
-// Check if user is logged in
-function checkAuth() {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
+// ✅ Get Dashboard Data
+async function getDashboardData() {
+    try {
+        const data = await apiCall('/api/dashboard');
+        console.log('📊 Dashboard data:', data);
+        return data;
+    } catch (error) {
+        console.error('Error fetching dashboard:', error);
+        throw error;
+    }
+}
+
+// ✅ Get Transaction History
+async function getTransactionHistory() {
+    try {
+        const data = await apiCall('/api/transactions');
+        console.log('📋 Transaction data:', data);
+        return data;
+    } catch (error) {
+        console.error('Error fetching transactions:', error);
+        throw error;
+    }
+}
+
+// ✅ API Call Helper Function - MAKE SURE BASE URL IS CORRECT
+async function apiCall(endpoint, options = {}) {
+    const baseURL = 'https://banking-backend-hqe6.onrender.com';
+    const url = baseURL + endpoint;
     
-    if (!token || !user) {
-        window.location.href = 'index.html'; // Redirect to login
-        return null;
+    console.log('🔄 Making API call to:', url);
+    
+    const config = {
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token') || 'test-token'}`
+        },
+        ...options
+    };
+    
+    if (options.body) {
+        config.body = options.body;
     }
     
-    return JSON.parse(user);
-}
-
-// Login function 
-async function login(email, password) {
-    const data = await apiCall('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password })
-    });
-    
-    // Save token and user data
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    
-    return data;
-}
-
-// Logout function
-function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = 'index.html';
-}
-
-// Get user dashboard data
-async function getDashboardData() {
-    return await apiCall('/users/dashboard');
-}
-
-// Get dashboard data
-// async function getDashboardData() {
-//     return await apiCall('/users/dashboard');
-// }
-
-// Get account details
-async function getAccountDetails() {
-    return await apiCall('/users/account');
-}
-
-// Get transaction history
-async function getTransactionHistory() {
-    return await apiCall('/users/transactions');
-}
-
-// Load and display dashboard data
-async function loadDashboardData(user) {
     try {
-        const dashboardData = await getDashboardData();
+        const response = await fetch(url, config);
         
-        // Update the dashboard with real data
-        document.getElementById('userName').textContent = dashboardData.user.name;
-        document.getElementById('welcomeName').textContent = dashboardData.user.name;
-        
-        // Update account balance
-        document.getElementById('accountBalance').textContent = '$' + dashboardData.account.balance;
-        document.getElementById('accountNumber').textContent = dashboardData.account.account_number;
-        
-        // Update recent transactions
-        const transactionsContainer = document.getElementById('recentTransactions');
-        if (dashboardData.recent_transactions.length > 0) {
-            transactionsContainer.innerHTML = dashboardData.recent_transactions.map(transaction => `
-                <div class="transaction-item">
-                    <div class="transaction-type ${transaction.type}">${transaction.type}</div>
-                    <div class="transaction-amount">$${transaction.amount}</div>
-                    <div class="transaction-desc">${transaction.description}</div>
-                    <div class="transaction-date">${new Date(transaction.date).toLocaleDateString()}</div>
-                </div>
-            `).join('');
-        } else {
-            transactionsContainer.innerHTML = '<p>No transactions yet.</p>';
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
         
+        return await response.json();
+        
     } catch (error) {
-        console.error('Error loading dashboard data:', error);
-        alert('Error loading dashboard data: ' + error.message);
+        console.error('❌ API Call Error:', error);
+        throw error;
     }
 }
