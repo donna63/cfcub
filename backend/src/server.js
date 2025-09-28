@@ -34,19 +34,21 @@ app.post('/api/auth/login', (req, res) => {
   console.log('Login attempt:', email);
   console.log('Available users:', users.map(u => u.email));
   
-  // Check if user exists in the users array
   const user = users.find(u => u.email === email && u.password === password);
   
   if (user) {
-    // Return user without password
     const { password: _, ...userWithoutPassword } = user;
     
     res.json({
+      success: true,  // ✅ ADD THIS LINE
       token: `jwt-token-for-${user.id}`,
       user: userWithoutPassword
     });
   } else {
-    res.status(401).json({ message: 'Invalid email or password' });
+    res.status(401).json({ 
+      success: false,  // ✅ ADD THIS LINE
+      message: 'Invalid email or password' 
+    });
   }
 });
 
@@ -309,6 +311,8 @@ app.get('/api/transactions', (req, res) => {
 });
 
 // ======= END OF ENHANCED ENDPOINTS =======
+/// ======= END OF ENHANCED ENDPOINTS =======
+
 // ✅ Health check
 app.get('/health', (req, res) => {
   res.json({ 
@@ -331,12 +335,6 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'API is working!' });
 });
 
-// ✅ Start server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📍 Server URL: http://0.0.0.0:${PORT}`);
-});
-
 // ✅ Debug route to see all users
 app.get('/api/debug/users', (req, res) => {
   console.log('=== ALL USERS ===');
@@ -344,123 +342,8 @@ app.get('/api/debug/users', (req, res) => {
   res.json({ users: users.map(u => ({ id: u.id, email: u.email, name: u.name, role: u.role })) });
 });
 
-// ✅ LOGIN ROUTE (MAKE SURE THIS EXISTS)
-app.post('/api/auth/login', (req, res) => {
-  const { email, password } = req.body;
-  
-  console.log('Login attempt:', email);
-  
-  // Check if user exists
-  const user = users.find(u => u.email === email && u.password === password);
-  
-  if (user) {
-    // Return user without password
-    const { password: _, ...userWithoutPassword } = user;
-    
-    res.json({
-      success: true,
-      token: `jwt-token-for-${user.id}`,
-      user: userWithoutPassword
-    });
-  } else {
-    res.status(401).json({ 
-      success: false,
-      message: 'Invalid email or password' 
-    });
-  }
-});
-
-// ✅ DASHBOARD ROUTE (MAKE SURE THIS EXISTS)
-app.get('/api/dashboard', (req, res) => {
-  try {
-    // Get user from token or use first user
-    const authHeader = req.headers.authorization;
-    let user;
-    
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      const userIdMatch = token.match(/jwt-token-for-(\d+)/);
-      
-      if (userIdMatch) {
-        const userId = parseInt(userIdMatch[1]);
-        user = users.find(u => u.id === userId);
-      }
-    }
-    
-    // Fallback to first user
-    if (!user) {
-      user = users.find(u => u.role === 'user') || users[0];
-    }
-    
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    const userTransactions = transactions.filter(t => t.userId === user.id);
-    const { password, ...userWithoutPassword } = user;
-    
-    res.json({
-      user: userWithoutPassword,
-      account: {
-        balance: user.balance,
-        account_number: user.accountNumber
-      },
-      recent_transactions: userTransactions.slice(-10).reverse().map(t => ({
-        date: t.date,
-        description: t.description,
-        type: t.type,
-        amount: t.amount,
-        balance: t.balance_after
-      }))
-    });
-  } catch (error) {
-    console.error('Dashboard error:', error);
-    res.status(500).json({ error: 'Error loading dashboard' });
-  }
-});
-
-// ✅ TRANSACTIONS ROUTE (MAKE SURE THIS EXISTS)
-app.get('/api/transactions', (req, res) => {
-  try {
-    // Get user from token or use first user
-    const authHeader = req.headers.authorization;
-    let user;
-    
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      const userIdMatch = token.match(/jwt-token-for-(\d+)/);
-      
-      if (userIdMatch) {
-        const userId = parseInt(userIdMatch[1]);
-        user = users.find(u => u.id === userId);
-      }
-    }
-    
-    // Fallback to first user
-    if (!user) {
-      user = users.find(u => u.role === 'user') || users[0];
-    }
-    
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    const userTransactions = transactions.filter(t => t.userId === user.id);
-    
-    res.json({
-      account_balance: user.balance,
-      total_count: userTransactions.length,
-      transactions: userTransactions.map(t => ({
-        id: t.id,
-        type: t.type,
-        amount: t.amount,
-        description: t.description,
-        date: t.date,
-        balance_after: t.balance_after
-      }))
-    });
-  } catch (error) {
-    console.error('Transactions error:', error);
-    res.status(500).json({ error: 'Error loading transactions' });
-  }
+// ✅ Start server
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📍 Server URL: http://0.0.0.0:${PORT}`);
 });
