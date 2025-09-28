@@ -233,10 +233,12 @@
 // window.getDashboardData = () => window.authSystem.getDashboardData();
 
 // js/auth.js - Client-side authentication that talks to your backend
+// js/auth.js - Fixed authentication system
+
 class AuthSystem {
     constructor() {
         this.currentUser = null;
-        this.baseURL = ''; // Same origin since we're serving from same server
+        this.baseURL = 'https://banking-backend-hqe6.onrender.com';
         this.init();
     }
 
@@ -246,7 +248,9 @@ class AuthSystem {
 
     async login(email, password) {
         try {
-            const response = await fetch('/api/auth/login', {
+            console.log('🔄 Attempting login:', email);
+            
+            const response = await fetch(this.baseURL + '/api/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -254,23 +258,35 @@ class AuthSystem {
                 body: JSON.stringify({ email, password })
             });
 
+            console.log('📡 Login response status:', response.status);
+
+            const result = await response.json();
+            console.log('📡 Login response data:', result);
+
             if (!response.ok) {
-                throw new Error('Invalid email or password');
+                throw new Error(result.message || 'Invalid email or password');
             }
 
-            const data = await response.json();
-            this.currentUser = data.user;
-            
-            // Store user session
-            localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
-            localStorage.setItem('authToken', data.token);
-            localStorage.setItem('isLoggedIn', 'true');
-            
-            return {
-                success: true,
-                user: this.currentUser
-            };
+            // Check for success flag or token
+            if (result.success || result.token) {
+                this.currentUser = result.user;
+                
+                // Store user session
+                localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+                localStorage.setItem('authToken', result.token);
+                localStorage.setItem('isLoggedIn', 'true');
+                
+                console.log('✅ Login successful:', this.currentUser);
+                
+                return {
+                    success: true,
+                    user: this.currentUser
+                };
+            } else {
+                throw new Error('Login failed: Invalid response from server');
+            }
         } catch (error) {
+            console.error('❌ Login error:', error);
             throw new Error('Login failed: ' + error.message);
         }
     }
@@ -280,7 +296,7 @@ class AuthSystem {
         localStorage.removeItem('currentUser');
         localStorage.removeItem('authToken');
         localStorage.removeItem('isLoggedIn');
-        window.location.href = '/login.html';
+        window.location.href = 'login.html';
     }
 
     isAuthenticated() {
@@ -303,10 +319,11 @@ class AuthSystem {
         const storedUser = localStorage.getItem('currentUser');
         if (storedUser) {
             this.currentUser = JSON.parse(storedUser);
+            console.log('✅ User session loaded:', this.currentUser);
         }
     }
 
-    requireAuth(redirectTo = '/login.html') {
+    requireAuth(redirectTo = 'login.html') {
         if (!this.isAuthenticated()) {
             window.location.href = redirectTo;
             return false;
@@ -316,29 +333,27 @@ class AuthSystem {
 
     async getDashboardData() {
         try {
-            const response = await fetch('/api/users/dashboard');
-            if (!response.ok) {
-                throw new Error('Failed to load dashboard data');
-            }
-            return await response.json();
+            const data = await apiCall('/api/dashboard');
+            console.log('📊 Dashboard data:', data);
+            return data;
         } catch (error) {
-            throw new Error('Error loading dashboard: ' + error.message);
+            console.error('Error fetching dashboard:', error);
+            throw error;
         }
     }
 }
 
-// Create global instance
-window.authSystem = new AuthSystem();
-
-// ✅ API Call Helper Function
+// ✅ SINGLE API Call Helper Function (NO DUPLICATES)
 async function apiCall(endpoint, options = {}) {
     const baseURL = 'https://banking-backend-hqe6.onrender.com';
     const url = baseURL + endpoint;
     
+    console.log('🔄 API Call:', url);
+    
     const config = {
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('authToken') || localStorage.getItem('token') || 'test-token'}`
         },
         ...options
     };
@@ -348,24 +363,16 @@ async function apiCall(endpoint, options = {}) {
     }
     
     try {
-        console.log(`🔄 API Call: ${url}`, config);
-        
         const response = await fetch(url, config);
-        const responseText = await response.text();
         
-        console.log(`📡 Response status: ${response.status}`);
-        console.log(`📡 Response text:`, responseText);
+        console.log('📡 Response status:', response.status);
         
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${responseText}`);
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
         
-        // Try to parse as JSON, if empty return success
-        if (!responseText) {
-            return { success: true };
-        }
-        
-        return JSON.parse(responseText);
+        return await response.json();
         
     } catch (error) {
         console.error('❌ API Call Error:', error);
@@ -397,37 +404,18 @@ async function getTransactionHistory() {
     }
 }
 
-// ✅ API Call Helper Function - MAKE SURE BASE URL IS CORRECT
-async function apiCall(endpoint, options = {}) {
-    const baseURL = 'https://banking-backend-hqe6.onrender.com';
-    const url = baseURL + endpoint;
-    
-    console.log('🔄 Making API call to:', url);
-    
-    const config = {
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token') || 'test-token'}`
-        },
-        ...options
-    };
-    
-    if (options.body) {
-        config.body = options.body;
-    }
-    
-    try {
-        const response = await fetch(url, config);
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP ${response.status}: ${errorText}`);
-        }
-        
-        return await response.json();
-        
-    } catch (error) {
-        console.error('❌ API Call Error:', error);
-        throw error;
-    }
-}
+// Create global instance
+window.authSystem = new AuthSystem();
+
+// Make functions globally available
+window.checkAuth = () => window.authSystem.isAuthenticated();
+window.logout = () => window.authSystem.logout();
+window.getDashboardData = getDashboardData;
+window.getTransactionHistory = getTransactionHistory;
+
+// Check auth on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔐 Auth system initialized');
+    console.log('User authenticated:', window.authSystem.isAuthenticated());
+    console.log('Current user:', window.authSystem.getCurrentUser());
+});
