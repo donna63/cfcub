@@ -714,3 +714,30 @@ app.post('/api/admin/transactions', async (req, res) => {
     });
   }
 });
+
+// ✅ GET all users with their MongoDB IDs (for admin panel)
+app.get('/api/admin/users-with-ids', async (req, res) => {
+  try {
+    const users = await User.find({}, 'name email _id accountNumber balance role');
+    
+    const usersWithIds = users.map(user => ({
+      mongoId: user._id, // This is what you need for transactions
+      name: user.name,
+      email: user.email, 
+      accountNumber: user.accountNumber,
+      balance: user.balance,
+      role: user.role
+    }));
+    
+    console.log('📋 Users with MongoDB IDs:', usersWithIds);
+    
+    res.json({
+      success: true,
+      users: usersWithIds
+    });
+    
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Error fetching users' });
+  }
+});

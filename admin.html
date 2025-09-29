@@ -204,28 +204,28 @@ if (!user) {
 console.log('Current user:', JSON.parse(localStorage.getItem('user')));
 console.log('Current token:', localStorage.getItem('token'));
 
-        // Admin-specific functions
-      async function loadUsers() {
+     async function loadUsers() {
     try {
         console.log('🔄 Loading users...');
         
-        // ✅ FIXED: Added /api/ prefix
         const response = await apiCall('/api/admin/users');
         const users = response.users;
         
         console.log('📋 Users loaded:', users);
         
-        // Update users dropdown
+        // ✅ FIXED: Use the correct MongoDB _id field
         const userSelect = document.getElementById('transactionUser');
         userSelect.innerHTML = '<option value="">Select a user</option>';
+        
         users.forEach(user => {
             const option = document.createElement('option');
-            option.value = user.id;
+            // ✅ Use user._id (MongoDB ObjectId) instead of user.id
+            option.value = user._id; 
             option.textContent = `${user.name} (${user.Account.account_number}) - $${user.Account.balance}`;
             userSelect.appendChild(option);
         });
 
-        // Update users table
+        // Update users table - also fix the ID here
         const tbody = document.getElementById('usersTableBody');
         if (users.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No users found</td></tr>';
@@ -255,7 +255,8 @@ console.log('Current token:', localStorage.getItem('token'));
                     ${new Date(user.createdAt).toLocaleDateString()}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button onclick="addSampleTransactions(${user.id})" class="text-blue-600 hover:text-blue-900 mr-3">
+                    <!-- ✅ FIXED: Use _id instead of id -->
+                    <button onclick="addSampleTransactions('${user._id}')" class="text-blue-600 hover:text-blue-900 mr-3">
                         <i class="fas fa-plus mr-1"></i>Add Sample Data
                     </button>
                 </td>
@@ -358,36 +359,44 @@ document.getElementById('createUserForm').addEventListener('submit', async funct
     }
 });
 
-        async function addSampleTransactions(userId) {
-            if (!confirm('Add sample transactions for this user?')) return;
+      async function addSampleTransactions(userId) {
+    if (!confirm('Add sample transactions for this user?')) return;
 
+    try {
+        const transactions = [
+            { type: 'deposit', amount: 1000, description: 'Initial account funding' },
+            { type: 'deposit', amount: 2500, description: 'Salary deposit' },
+            { type: 'withdrawal', amount: 500, description: 'Rent payment' },
+            { type: 'withdrawal', amount: 150, description: 'Grocery shopping' },
+            { type: 'deposit', amount: 300, description: 'Freelance payment' }
+        ];
+
+        let successCount = 0;
+        
+        for (const transaction of transactions) {
             try {
-                const transactions = [
-                    { type: 'deposit', amount: 1000, description: 'Initial account funding' },
-                    { type: 'deposit', amount: 2500, description: 'Salary deposit' },
-                    { type: 'withdrawal', amount: 500, description: 'Rent payment' },
-                    { type: 'withdrawal', amount: 150, description: 'Grocery shopping' },
-                    { type: 'deposit', amount: 300, description: 'Freelance payment' }
-                ];
-
-                for (const transaction of transactions) {
-                    await apiCall('api/admin/transactions', {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            userId: userId,
-                            type: transaction.type,
-                            amount: transaction.amount,
-                            description: transaction.description
-                        })
-                    });
-                }
-
-                alert('✅ Sample transactions added successfully!');
-                await loadAdminData();
+                await apiCall('/api/admin/transactions', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        userId: userId,
+                        type: transaction.type,
+                        amount: transaction.amount,
+                        description: transaction.description
+                    })
+                });
+                successCount++;
             } catch (error) {
-                alert('❌ Error adding sample transactions: ' + error.message);
+                console.error(`Failed to add transaction: ${transaction.description}`, error);
             }
         }
+
+        alert(`✅ ${successCount}/${transactions.length} sample transactions added successfully!`);
+        await loadAdminData(); // Refresh the data
+        
+    } catch (error) {
+        alert('❌ Error adding sample transactions: ' + error.message);
+    }
+}
 
         // Initialize admin dashboard
         document.addEventListener('DOMContentLoaded', function() {
@@ -408,7 +417,6 @@ async function loadAdminData() {
     try {
         console.log('🔄 Loading admin data...');
         
-        // Test the endpoint directly first
         const testResponse = await fetch('https://banking-backend-hqe6.onrender.com/api/admin/stats');
         console.log('Test response:', testResponse);
         
@@ -423,11 +431,43 @@ async function loadAdminData() {
         document.getElementById('totalAccounts').textContent = stats.totalAccounts;
         document.getElementById('totalBalance').textContent = '$' + parseFloat(stats.totalBalance).toFixed(2);
 
+        // ✅ Load both users table AND populate dropdown
         await loadUsers();
+        await populateUserDropdown();
         
     } catch (error) {
         console.error('❌ Error:', error);
         alert('Error: ' + error.message);
+    }
+}
+
+
+// ✅ Function to populate user dropdown
+async function populateUserDropdown() {
+    try {
+        console.log('🔄 Loading users for dropdown...');
+        
+        const response = await apiCall('/api/admin/users');
+        const users = response.users;
+        
+        console.log('📋 Users for dropdown:', users);
+        
+        const userSelect = document.getElementById('transactionUser');
+        userSelect.innerHTML = '<option value="">Select a user</option>';
+        
+        users.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user._id; // Use MongoDB _id
+            option.textContent = `${user.name} (${user.Account.account_number}) - $${user.Account.balance}`;
+            userSelect.appendChild(option);
+        });
+
+        console.log('✅ User dropdown populated');
+
+    } catch (error) {
+        console.error('❌ Error loading users for dropdown:', error);
+        const userSelect = document.getElementById('transactionUser');
+        userSelect.innerHTML = '<option value="">Error loading users</option>';
     }
 }
 
