@@ -607,55 +607,55 @@ app.listen(PORT, '0.0.0.0', () => {
 });
 
 
-// ✅ Create user endpoint
-app.post('/api/users', async (req, res) => {
-  try {
-    const { name, email, password, initialBalance = 0 } = req.body;
+// // ✅ Create user endpoint
+// app.post('/api/users', async (req, res) => {
+//   try {
+//     const { name, email, password, initialBalance = 0 } = req.body;
     
-    console.log('Creating user:', { name, email, initialBalance });
+//     console.log('Creating user:', { name, email, initialBalance });
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ error: 'User with this email already exists' });
-    }
+//     // Check if user already exists
+//     const existingUser = await User.findOne({ email });
+//     if (existingUser) {
+//       return res.status(400).json({ error: 'User with this email already exists' });
+//     }
 
-    // Create new user
-    const newUser = await User.create({
-      name,
-      email,
-      password, // In real app, hash this!
-      role: 'user',
-      accountNumber: `UB${Date.now().toString().slice(-8)}`,
-      balance: parseFloat(initialBalance) || 0,
-    });
+//     // Create new user
+//     const newUser = await User.create({
+//       name,
+//       email,
+//       password, // In real app, hash this!
+//       role: 'user',
+//       accountNumber: `UB${Date.now().toString().slice(-8)}`,
+//       balance: parseFloat(initialBalance) || 0,
+//     });
 
-    // Create initial transaction if balance > 0
-    if (initialBalance > 0) {
-      await Transaction.create({
-        userId: newUser._id,
-        type: 'deposit',
-        amount: parseFloat(initialBalance),
-        description: 'Initial account funding',
-        balance_after: parseFloat(initialBalance),
-      });
-    }
+//     // Create initial transaction if balance > 0
+//     if (initialBalance > 0) {
+//       await Transaction.create({
+//         userId: newUser._id,
+//         type: 'deposit',
+//         amount: parseFloat(initialBalance),
+//         description: 'Initial account funding',
+//         balance_after: parseFloat(initialBalance),
+//       });
+//     }
 
-    // Return user without password
-    const userObject = newUser.toObject();
-    const { password: _, ...userWithoutPassword } = userObject;
+//     // Return user without password
+//     const userObject = newUser.toObject();
+//     const { password: _, ...userWithoutPassword } = userObject;
     
-    res.status(201).json({
-      success: true,
-      message: 'User created successfully',
-      user: userWithoutPassword
-    });
+//     res.status(201).json({
+//       success: true,
+//       message: 'User created successfully',
+//       user: userWithoutPassword
+//     });
 
-  } catch (error) {
-    console.error('User creation error:', error);
-    res.status(500).json({ error: 'Error creating user' });
-  }
-});
+//   } catch (error) {
+//     console.error('User creation error:', error);
+//     res.status(500).json({ error: 'Error creating user' });
+//   }
+// });
 
 // ✅ ADMIN ADD TRANSACTION ENDPOINT
 app.post('/api/admin/transactions', async (req, res) => {
@@ -707,7 +707,7 @@ app.post('/api/admin/transactions', async (req, res) => {
   }
 });
 
-// ✅ User dashboard endpoint
+// ✅ User dashboard endpoint - FIXED VERSION
 app.get('/api/dashboard', async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
@@ -734,8 +734,13 @@ app.get('/api/dashboard', async (req, res) => {
     const userObject = user.toObject();
     const { password, ...userWithoutPassword } = userObject;
     
+    // Return data in exact format frontend expects
     res.json({
-      user: userWithoutPassword,
+      user: {
+        ...userWithoutPassword,
+        id: user._id, // Include id field
+        accountNumber: user.accountNumber // Make sure accountNumber is included
+      },
       account: {
         balance: user.balance,
         account_number: user.accountNumber,
@@ -743,6 +748,7 @@ app.get('/api/dashboard', async (req, res) => {
         status: "Active"
       },
       recent_transactions: userTransactions.map(t => ({
+        id: t._id,
         date: t.date,
         description: t.description,
         type: t.type,
@@ -755,8 +761,7 @@ app.get('/api/dashboard', async (req, res) => {
     res.status(500).json({ message: 'Error loading dashboard' });
   }
 });
-
-// ✅ User transactions endpoint
+// ✅ User transactions endpoint - FIXED VERSION
 app.get('/api/transactions', async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
@@ -785,14 +790,94 @@ app.get('/api/transactions', async (req, res) => {
       transactions: userTransactions.map(t => ({
         id: t._id,
         type: t.type,
-        amount: t.amount,
+        amount: parseFloat(t.amount),
         description: t.description,
         date: t.date,
-        balance_after: t.balance_after
+        balance_after: parseFloat(t.balance_after)
       }))
     });
   } catch (error) {
     console.error('Transactions error:', error);
     res.status(500).json({ message: 'Error loading transactions' });
+  }
+});
+
+// ✅ Create user endpoint - ENHANCED VERSION
+app.post('/api/users', async (req, res) => {
+  try {
+    const { name, email, password, initialBalance = 0 } = req.body;
+    
+    console.log('Creating user:', { name, email, initialBalance });
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: 'User with this email already exists' });
+    }
+
+    // Create new user
+    const newUser = await User.create({
+      name,
+      email,
+      password,
+      role: 'user',
+      accountNumber: `UB${Date.now().toString().slice(-8)}`,
+      balance: parseFloat(initialBalance) || 0,
+      createdAt: new Date().toISOString() // Make sure this is included
+    });
+
+    // Create initial transaction if balance > 0
+    if (initialBalance > 0) {
+      await Transaction.create({
+        userId: newUser._id,
+        type: 'deposit',
+        amount: parseFloat(initialBalance),
+        description: 'Initial account funding',
+        balance_after: parseFloat(initialBalance),
+        date: new Date().toISOString()
+      });
+    }
+
+    // Return user in the exact format frontend expects
+    const userObject = newUser.toObject();
+    const { password: _, ...userWithoutPassword } = userObject;
+    
+    res.status(201).json({
+      success: true,
+      message: 'User created successfully',
+      user: {
+        ...userWithoutPassword,
+        id: newUser._id, // Include both _id and id for compatibility
+        Account: {
+          account_number: newUser.accountNumber,
+          balance: newUser.balance
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('User creation error:', error);
+    res.status(500).json({ error: 'Error creating user' });
+  }
+});
+
+// ✅ Debug endpoint to check specific user
+app.get('/api/debug/user/:id', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const transactions = await Transaction.find({ userId: user._id });
+    
+    res.json({
+      user: user.toObject(),
+      transactions: transactions,
+      userRaw: user
+    });
+  } catch (error) {
+    console.error('Debug user error:', error);
+    res.status(500).json({ error: 'Server error' });
   }
 });
