@@ -347,3 +347,22 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📍 Server URL: http://0.0.0.0:${PORT}`);
 });
+
+
+// ✅ ADD THIS TO YOUR server.js - Temporary debug route
+app.get('/api/debug/routes', (req, res) => {
+  const routes = [
+    '/api/auth/login - POST',
+    '/api/admin/stats - GET', 
+    '/api/admin/users - GET',
+    '/api/dashboard - GET',
+    '/api/transactions - GET'
+  ];
+  
+  res.json({
+    message: 'Server is running',
+    routes: routes,
+    timestamp: new Date().toISOString(),
+    version: '1.0'
+  });
+});
