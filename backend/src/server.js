@@ -646,3 +646,71 @@ app.get('/api/admin/test-transaction', async (req, res) => {
     res.status(500).json({ error: 'Test failed: ' + error.message });
   }
 });
+
+// ✅ SIMPLE TRANSACTION ENDPOINT - FOR DEBUGGING
+app.post('/api/admin/transactions', async (req, res) => {
+  try {
+    console.log('💳 TRANSACTION REQUEST RECEIVED');
+    console.log('Request body:', req.body);
+    
+    const { userId, type, amount, description } = req.body;
+    
+    // Basic validation
+    if (!userId || !type || !amount) {
+      return res.status(400).json({ 
+        error: 'Missing required fields' 
+      });
+    }
+    
+    console.log('🔍 Looking for user:', userId);
+    
+    // Try to find the user
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      console.log('❌ User not found');
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    console.log('✅ User found:', user.email);
+    
+    // Simple transaction logic
+    let newBalance = user.balance;
+    
+    if (type === 'deposit') {
+      newBalance += parseFloat(amount);
+    } else if (type === 'withdrawal') {
+      if (user.balance < amount) {
+        return res.status(400).json({ error: 'Insufficient funds' });
+      }
+      newBalance -= parseFloat(amount);
+    }
+    
+    // Update user
+    user.balance = newBalance;
+    await user.save();
+    
+    // Create transaction
+    const transaction = await Transaction.create({
+      userId: user._id,
+      type,
+      amount: parseFloat(amount),
+      description: description || 'Admin transaction',
+      balance_after: newBalance
+    });
+    
+    console.log('✅ Transaction successful');
+    
+    res.json({
+      success: true,
+      new_balance: newBalance,
+      transaction: transaction
+    });
+    
+  } catch (error) {
+    console.error('❌ TRANSACTION ERROR:', error);
+    res.status(500).json({ 
+      error: 'Server error: ' + error.message 
+    });
+  }
+});
