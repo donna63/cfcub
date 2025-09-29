@@ -15,26 +15,42 @@ const MONGODB_URI = process.env.DATABASE_URL || process.env.MONGODB_URI || 'mong
 const DB_NAME = 'banking';
 let db, usersCollection, transactionsCollection;
 
+
 // Connect to MongoDB
 async function connectToDatabase() {
   try {
+    console.log('🔗 Connecting to MongoDB...');
+    console.log('MongoDB URI:', MONGODB_URI ? 'Set' : 'Not set');
+    
     const client = new MongoClient(MONGODB_URI, {
       tls: true,
-      tlsAllowInvalidCertificates: false,
-      tlsAllowInvalidHostnames: false,
+      tlsAllowInvalidCertificates: true, // Temporary for debugging
+      tlsAllowInvalidHostnames: true,    // Temporary for debugging
       retryWrites: true,
-      w: 'majority'
+      w: 'majority',
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 10000
     });
     
     await client.connect();
+    console.log('✅ MongoDB client connected');
+    
+    // Test the connection
+    await client.db('admin').command({ ping: 1 });
+    console.log('✅ MongoDB ping successful');
+    
     db = client.db(DB_NAME);
+    console.log(`✅ Using database: ${DB_NAME}`);
+    
+    // Get or create collections
     usersCollection = db.collection('users');
     transactionsCollection = db.collection('transactions');
+    console.log('✅ Collections initialized');
     
     // Create initial admin user if doesn't exist
     const adminExists = await usersCollection.findOne({ email: 'admin@unionbank.com' });
     if (!adminExists) {
-      await usersCollection.insertOne({
+      const adminResult = await usersCollection.insertOne({
         name: 'Admin User',
         email: 'admin@unionbank.com',
         password: 'admin123',
@@ -43,12 +59,20 @@ async function connectToDatabase() {
         balance: 10000.00,
         createdAt: new Date().toISOString()
       });
-      console.log('✅ Admin user created');
+      console.log('✅ Admin user created with ID:', adminResult.insertedId);
+    } else {
+      console.log('✅ Admin user already exists');
     }
     
-    console.log('✅ Connected to MongoDB Atlas with SSL');
+    console.log('🎉 MongoDB setup completed successfully');
+    
   } catch (error) {
     console.error('❌ MongoDB connection error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      name: error.name
+    });
   }
 }
 
@@ -257,41 +281,44 @@ app.get('/api/transactions', async (req, res) => {
   }
 });
 
-// ✅ Admin endpoints (keep your existing ones, just update to use MongoDB)
-app.get('/api/admin/stats', async (req, res) => {
-  try {
-    const totalUsers = await usersCollection.countDocuments();
-    const totalBalanceResult = await usersCollection.aggregate([
-      { $group: { _id: null, total: { $sum: '$balance' } } }
-    ]).toArray();
-    const totalBalance = totalBalanceResult[0]?.total || 0;
-    
-    res.json({
-      totalUsers,
-      totalAccounts: totalUsers,
-      totalBalance: totalBalance.toFixed(2)
-    });
-  } catch (error) {
-    console.error('Admin stats error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
+// ✅ Admin users endpoint - FIXED VERSION
 app.get('/api/admin/users', async (req, res) => {
   try {
+    console.log('📊 Fetching all users...');
+    
+    // Check if collection exists and is accessible
+    if (!usersCollection) {
+      return res.status(500).json({ error: 'Database not connected' });
+    }
+    
     const allUsers = await usersCollection.find({}).toArray();
+    console.log(`✅ Found ${allUsers.length} users`);
+    
     const usersWithoutPasswords = allUsers.map(({ password, ...user }) => ({
-      ...user,
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      accountNumber: user.accountNumber,
+      balance: user.balance,
+      createdAt: user.createdAt,
       Account: {
         account_number: user.accountNumber,
         balance: user.balance
       }
     }));
     
-    res.json({ users: usersWithoutPasswords });
+    res.json({ 
+      success: true,
+      users: usersWithoutPasswords 
+    });
+    
   } catch (error) {
-    console.error('Admin users error:', error);
-    res.status(500).json({ error: 'Server error' });
+    console.error('❌ Admin users error:', error);
+    res.status(500).json({ 
+      error: 'Server error',
+      details: error.message 
+    });
   }
 });
 
