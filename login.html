@@ -262,60 +262,8 @@
 
     <script src="js/auth.js"></script>
 
- 
-    <!-- <script src="js/auth.js"></script> -->
-<script>
-document.getElementById('loginForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    
-    console.log('🔐 Login attempt:', email);
-    
-    // SIMPLE LOGIN
-    let userData;
-    
-    if (email === 'admin@unionbank.com' && password === 'admin123') {
-        userData = {
-            id: 1,
-            name: 'Admin User',
-            email: email,
-            role: 'admin',
-            accountNumber: '1000001',
-            balance: 10000
-        };
-    } else if (email.includes('@')) {
-        userData = {
-            id: Date.now(),
-            name: email.split('@')[0],
-            email: email,
-            role: 'user',
-            accountNumber: 'UB' + Date.now().toString().slice(-8),
-            balance: 1000
-        };
-    }
-    
-    if (userData) {
-        // Save user using our new function
-        saveUser(userData);
-        
-        console.log('✅ Login successful, redirecting...');
-        
-        // Redirect with delay to ensure save completes
-        setTimeout(() => {
-            if (userData.role === 'admin') {
-                window.location.href = 'admin.html';
-            } else {
-                window.location.href = 'dashboard.html';
-            }
-        }, 100);
-    } else {
-        alert('Use:\nAdmin: admin@unionbank.com / admin123\nUser: any email / any password');
-    }
-});
-</script>
-        <!-- <script>
+
+    <script>
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
@@ -324,13 +272,13 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     const submitBtn = this.querySelector('button[type="submit"]');
     
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
+    submitBtn.innerHTML = 'Signing In...';
     
     try {
-        console.log('🔄 Login attempt:', email);
+        console.log('🔐 Login attempt:', email);
         
         const response = await fetch('https://banking-backend-hqe6.onrender.com/api/auth/login', {
-            method: 'POST',  // ← MUST BE POST
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -345,9 +293,12 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         if (result.success) {
             console.log('✅ Login successful!');
             
-            // Save to localStorage
-            localStorage.setItem('token', result.token);
-            localStorage.setItem('user', JSON.stringify(result.user));
+            // ✅ Save to sessionStorage (not localStorage)
+            sessionStorage.setItem('user', JSON.stringify(result.user));
+            sessionStorage.setItem('token', result.token); // Save the real token from backend
+            
+            console.log('💾 Saved user data:', result.user);
+            console.log('🔐 Saved token:', result.token);
             
             // Redirect based on role
             if (result.user.role === 'admin') {
@@ -357,401 +308,30 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             }
         } else {
             alert('Login failed: ' + result.message);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Sign In';
         }
         
     } catch (error) {
         console.error('❌ Login error:', error);
         alert('Login error: ' + error.message);
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = 'Sign In';
-    }
-});
-</script> -->
-
-<!-- <script>
-document.getElementById('loginForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    
-    console.log('🔐 Login attempt:', email);
-    
-    // Use XMLHttpRequest instead of fetch (bypasses some restrictions)
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', 'https://banking-backend-hqe6.onrender.com/api/auth/login', true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            if (xhr.status === 200) {
-                const result = JSON.parse(xhr.responseText);
-                console.log('✅ Login successful:', result);
-                
-                if (result.success) {
-                    localStorage.setItem('token', result.token);
-                    localStorage.setItem('user', JSON.stringify(result.user));
-                    
-                    if (result.user.role === 'admin') {
-                        window.location.href = 'admin.html';
-                    } else {
-                        window.location.href = 'dashboard.html';
-                    }
-                } else {
-                    alert('Login failed: ' + result.message);
-                }
-            } else {
-                console.log('❌ Using offline login due to network restrictions');
-                useOfflineLogin(email, password);
-            }
-        }
-    };
-    
-    xhr.send(JSON.stringify({ email, password }));
-});
-
-function useOfflineLogin(email, password) {
-    let userData;
-    
-    if (email === 'admin@unionbank.com' && password === 'admin123') {
-        userData = {
-            id: 1,
-            name: 'Admin User',
-            email: email,
-            role: 'admin',
-            accountNumber: '1000001',
-            balance: 10000
-        };
-    } else if (email.includes('@')) {
-        userData = {
-            id: Date.now(),
-            name: email.split('@')[0],
-            email: email,
-            role: 'user', 
-            accountNumber: 'UB' + Date.now().toString().slice(-8),
-            balance: 1000
-        };
-    }
-    
-    if (userData) {
-        localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('token', 'demo-token-' + userData.id);
-        
-        if (userData.role === 'admin') {
-            window.location.href = 'admin.html';
-        } else {
-            window.location.href = 'dashboard.html';
-        }
-    } else {
-        alert('Use:\nAdmin: admin@unionbank.com / admin123\nUser: any email / any password');
-    }
-}
-</script> -->
-
-
-
-    <!-- <script src="js/auth.js"></script>
-<script>
-document.getElementById('loginForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const submitBtn = this.querySelector('button[type="submit"]');
-    
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
-    
-    try {
-        console.log('🔄 Login attempt:', email);
-        
-        const response = await fetch('https://banking-backend-hqe6.onrender.com/api/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password })
-        });
-        
-        console.log('📡 Response status:', response.status);
-        
-        const result = await response.json();
-        console.log('📡 Full response:', result);
-        
-        // Check if login was successful
-        if (result.success === true || result.token) {
-            console.log('✅ Login successful!');
-            localStorage.setItem('token', result.token);
-            localStorage.setItem('user', JSON.stringify(result.user));
-            
-            // Redirect based on role
-            if (result.user.role === 'admin') {
-                window.location.href = 'admin.html';
-            } else {
-                window.location.href = 'dashboard.html';
-            }
-        } else {
-            console.log('❌ Login failed:', result.message);
-            alert('Login failed: ' + (result.message || 'Invalid credentials'));
-        }
-        
-    } catch (error) {
-        console.error('❌ Login error:', error);
-        alert('Login error: ' + error.message);
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = 'Sign In';
-    }
-});
-</script> -->
-
-<!-- 
-<script src="js/auth.js"></script>
-<script>
-document.getElementById('loginForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const submitBtn = this.querySelector('button[type="submit"]');
-    
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
-    
-    try {
-        const result = await authSystem.login(email, password);
-        
-        if (result.success) {
-            if (result.user.role === 'admin') {
-                window.location.href = 'admin.html';
-            } else {
-                window.location.href = 'dashboard.html';
-            }
-        }
-    } catch (error) {
-        alert(error.message);
         submitBtn.disabled = false;
         submitBtn.innerHTML = 'Sign In';
     }
 });
 
-
-// Test if endpoints exist
-console.log('🔍 Testing endpoints...');
-
-// Test stats endpoint (we know this works)
-fetch('https://banking-backend-hqe6.onrender.com/api/admin/stats')
-    .then(r => console.log('✅ Stats endpoint: WORKING'))
-    .catch(e => console.log('❌ Stats endpoint: BROKEN'));
-
-// Test login endpoint
-fetch('https://banking-backend-hqe6.onrender.com/api/auth/login')
-    .then(r => console.log('✅ Login endpoint: EXISTS (GET)'))
-    .catch(e => console.log('❌ Login endpoint: MISSING'));
-
-// Test dashboard endpoint  
-fetch('https://banking-backend-hqe6.onrender.com/api/dashboard')
-    .then(r => console.log('✅ Dashboard endpoint: WORKING'))
-    .catch(e => console.log('❌ Dashboard endpoint: BROKEN'));
-</script> -->
-
-<!--  
-<script src="js/auth.js"></script>
-<script>
-document.getElementById('loginForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const submitBtn = this.querySelector('button[type="submit"]');
-    
-    // Show loading
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Signing In...';
-    
-    try {
-        const result = await authSystem.login(email, password);
-        
-        if (result.success) {
-            // Redirect based on user role
-            if (result.user.role === 'admin') {
-                window.location.href = 'admin.html';
-            } else {
-                window.location.href = 'dashboard.html';
-            }
-        }
-    } catch (error) {
-        alert('Login failed: ' + error.message);
-        
-        // Reset button
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Sign In';
-    }
-});
-
-// Password visibility toggle
+// Password toggle
 document.getElementById('togglePassword').addEventListener('click', function() {
     const passwordInput = document.getElementById('password');
     const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
     passwordInput.setAttribute('type', type);
     
-    // Toggle eye icons
     document.getElementById('eyeIcon').classList.toggle('hidden');
     document.getElementById('eyeOffIcon').classList.toggle('hidden');
 });
+</script>
+ 
+ 
 
-</script> -->
-
-    <!-- <script src="js/auth.js"></script>
-<script>
-
-    
-document.getElementById('loginForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const submitBtn = this.querySelector('button[type="submit"]');
-    
-    // Show loading
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
-    
-    try {
-        // Try to login
-        await authAPI.login(email, password);
-        
-        // Success - redirect to dashboard
-        window.location.href = 'dashboard.html';
-        
-    } catch (error) {
-        // Show error
-        alert(error.message);
-        
-        // Reset button
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = 'Sign In';
-    }
-});
-</script> -->
-    
-
-    <!-- Add this before closing </body> tag in login.html -->
-<!-- <script src="js/auth.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const loginForm = document.getElementById('loginForm');
-    
-    loginForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        
-        try {
-            const result = await login(email, password);
-            
-            // Redirect based on user role
-            if (result.user.role === 'admin') {
-                window.location.href = 'admin.html';
-            } else {
-                window.location.href = 'dashboard.html';
-            }
-        } catch (error) {
-            alert('Login failed: ' + error.message);
-        }
-    });
-});
-</script> -->
-    <!-- Add this before closing </body> tag in your login page -->
-<!-- <script src="js/auth.js"></script>
-<script>
-document.getElementById('loginForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    
-    try {
-        const result = await login(email, password);
-        
-        // Redirect based on user role
-        if (result.user.role === 'admin') {
-            window.location.href = 'admin.html';
-        } else {
-            window.location.href = 'dashboard.html';
-        }
-    } catch (error) {
-        alert('Login failed: ' + error.message);
-    }
-});
-</script> -->
-
-    <!-- <script src="script.js"></script>
-    <script>
-        // Login-specific functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const loginForm = document.getElementById('loginForm');
-            const togglePassword = document.getElementById('togglePassword');
-            const passwordInput = document.getElementById('password');
-            const eyeIcon = document.getElementById('eyeIcon');
-            const eyeOffIcon = document.getElementById('eyeOffIcon');
-
-            // Toggle password visibility
-            togglePassword.addEventListener('click', function() {
-                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                passwordInput.setAttribute('type', type);
-                
-                eyeIcon.classList.toggle('hidden');
-                eyeOffIcon.classList.toggle('hidden');
-            });
-
-            // Form validation and submission
-            loginForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
-                const emailError = document.getElementById('emailError');
-                const passwordError = document.getElementById('passwordError');
-                
-                // Reset errors
-                emailError.classList.add('hidden');
-                passwordError.classList.add('hidden');
-                
-                let isValid = true;
-
-                // Email validation
-                if (!email) {
-                    emailError.textContent = 'Email address is required';
-                    emailError.classList.remove('hidden');
-                    isValid = false;
-                } else if (!/\S+@\S+\.\S+/.test(email)) {
-                    emailError.textContent = 'Please enter a valid email address';
-                    emailError.classList.remove('hidden');
-                    isValid = false;
-                }
-
-                // Password validation
-                if (!password) {
-                    passwordError.textContent = 'Password is required';
-                    passwordError.classList.remove('hidden');
-                    isValid = false;
-                } else if (password.length < 6) {
-                    passwordError.textContent = 'Password must be at least 6 characters';
-                    passwordError.classList.remove('hidden');
-                    isValid = false;
-                }
-
-                if (isValid) {
-                    // Simulate login success
-                    alert('Login successful!');
-                    // In a real app, you would redirect to the dashboard
-                    window.location.href = 'dashboard.html';
-                }
-            });
-        });
-    </script> -->
 </body>
 </html>

@@ -87,15 +87,18 @@ app.use(cors());
 app.use(express.json());
 
 // ✅ Auth login route
+// ✅ Auth login route - SIMPLE VERSION
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    console.log('Login attempt:', email);
+    console.log('🔑 LOGIN REQUEST:', { email, password });
     
     const user = await User.findOne({ email, password });
     
     if (user) {
+      console.log('✅ USER FOUND:', user.email);
+      
       const userObject = user.toObject();
       const { password: _, ...userWithoutPassword } = userObject;
       
@@ -105,6 +108,7 @@ app.post('/api/auth/login', async (req, res) => {
         user: userWithoutPassword
       });
     } else {
+      console.log('❌ USER NOT FOUND');
       res.status(401).json({ 
         success: false,
         message: 'Invalid email or password' 
@@ -115,7 +119,6 @@ app.post('/api/auth/login', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
-
 // ✅ Auth me endpoint
 app.get('/api/auth/me', async (req, res) => {
   try {
@@ -250,89 +253,183 @@ app.listen(PORT, '0.0.0.0', () => {
 
 
 
-// ✅ ADMIN ADD TRANSACTION ENDPOINT
+// ✅ ADMIN ADD TRANSACTION ENDPOINT - ENHANCED
 app.post('/api/admin/transactions', async (req, res) => {
   try {
     const { userId, type, amount, description } = req.body;
     
-    console.log('Adding transaction:', { userId, type, amount, description });
+    console.log('💳 ADD TRANSACTION REQUEST =================================');
+    console.log('📥 Full request body:', req.body);
 
-    // Find user
-    const user = await User.findById(userId);
+    // Validate required fields
+    if (!userId || !type || !amount) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: userId, type, and amount are required' 
+      });
+    }
+
+    if (!['deposit', 'withdrawal'].includes(type)) {
+      return res.status(400).json({ 
+        error: 'Invalid transaction type. Must be "deposit" or "withdrawal"' 
+      });
+    }
+
+    // Try to find user by ID
+    let user;
+    try {
+      user = await User.findById(userId);
+    } catch (error) {
+      console.log('❌ Invalid user ID format:', userId);
+      return res.status(400).json({ 
+        error: 'Invalid user ID format' 
+      });
+    }
+    
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      console.log('❌ User not found with ID:', userId);
+      
+      // List available users for debugging
+      const allUsers = await User.find({}, 'name email _id');
+      console.log('📋 Available users:');
+      allUsers.forEach(u => console.log(`   - ${u._id}: ${u.email}`));
+      
+      return res.status(404).json({ 
+        error: `User not found with ID: ${userId}`,
+        available_users: allUsers.map(u => ({ id: u._id, email: u.email, name: u.name }))
+      });
+    }
+
+    console.log('✅ User found:', user.email);
+    console.log('💰 Current balance:', user.balance);
+    console.log('💸 Transaction amount:', amount);
+    console.log('📝 Transaction type:', type);
+
+    const amountNum = parseFloat(amount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+      return res.status(400).json({ 
+        error: 'Invalid amount. Must be a positive number' 
+      });
     }
 
     let newBalance = user.balance;
 
     // Update balance based on transaction type
     if (type === 'deposit') {
-      newBalance += parseFloat(amount);
+      newBalance += amountNum;
+      console.log('✅ Deposit - New balance:', newBalance);
     } else if (type === 'withdrawal') {
-      if (user.balance < amount) {
-        return res.status(400).json({ error: 'Insufficient funds' });
+      if (user.balance < amountNum) {
+        console.log('❌ Insufficient funds:', user.balance, '<', amountNum);
+        return res.status(400).json({ 
+          error: `Insufficient funds. Current balance: $${user.balance}, Attempted withdrawal: $${amountNum}` 
+        });
       }
-      newBalance -= parseFloat(amount);
+      newBalance -= amountNum;
+      console.log('✅ Withdrawal - New balance:', newBalance);
     }
 
     // Update user balance
     user.balance = newBalance;
     await user.save();
+    console.log('✅ User balance updated to:', newBalance);
 
     // Create transaction record
     const newTransaction = await Transaction.create({
       userId: user._id,
       type,
-      amount: parseFloat(amount),
-      description,
+      amount: amountNum,
+      description: description || `Admin ${type}`,
       balance_after: newBalance,
     });
 
+    console.log('✅ Transaction created successfully');
+    console.log('📄 Transaction ID:', newTransaction._id);
+
     res.json({
       success: true,
+      message: 'Transaction completed successfully',
       new_balance: newBalance.toFixed(2),
-      transaction: newTransaction
+      transaction: {
+        id: newTransaction._id,
+        type: newTransaction.type,
+        amount: newTransaction.amount,
+        description: newTransaction.description,
+        date: newTransaction.date
+      }
     });
 
   } catch (error) {
-    console.error('Transaction error:', error);
-    res.status(500).json({ error: 'Error processing transaction' });
+    console.error('❌ TRANSACTION ERROR:', error);
+    res.status(500).json({ 
+      error: 'Error processing transaction',
+      details: error.message 
+    });
   }
 });
 
-// ✅ User dashboard endpoint - FIXED VERSION
+// ✅ User dashboard endpoint - EXACT USER MATCHING
 app.get('/api/dashboard', async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
-    let user;
     
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      const userIdMatch = token.match(/jwt-token-for-(.+)/);
-      
-      if (userIdMatch) {
-        const userId = userIdMatch[1];
-        user = await User.findById(userId);
-      }
+    console.log('📊 DASHBOARD REQUEST =================================');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('❌ NO VALID AUTHORIZATION HEADER');
+      return res.status(401).json({ message: 'No authorization token' });
     }
+
+    const token = authHeader.substring(7);
+    console.log('🔐 TOKEN RECEIVED:', token);
+    
+    const userIdMatch = token.match(/jwt-token-for-(.+)/);
+    
+    if (!userIdMatch) {
+      console.log('❌ INVALID TOKEN FORMAT');
+      return res.status(401).json({ message: 'Invalid token format' });
+    }
+
+    const userId = userIdMatch[1];
+    console.log('🔍 EXTRACTED USER ID:', userId);
+    console.log('🔍 TYPE OF USER ID:', typeof userId);
+    
+    // Find the EXACT user - no fallbacks!
+    const user = await User.findById(userId);
     
     if (!user) {
-      return res.status(401).json({ message: 'User not authenticated' });
+      console.log('❌ USER NOT FOUND WITH ID:', userId);
+      
+      // List all users to see what's in the database
+      const allUsers = await User.find({});
+      console.log('📋 ALL USERS IN DATABASE:');
+      allUsers.forEach(u => {
+        console.log(`   - ${u._id} (${typeof u._id}): ${u.email} - ${u.name}`);
+      });
+      
+      return res.status(401).json({ message: 'User not found' });
     }
+
+    console.log('✅ USER FOUND FOR DASHBOARD:');
+    console.log('   - User ID:', user._id);
+    console.log('   - Email:', user.email);
+    console.log('   - Name:', user.name);
+    console.log('   - Balance:', user.balance);
     
+    // Get THIS USER'S transactions only
     const userTransactions = await Transaction.find({ userId: user._id })
       .sort({ date: -1 })
       .limit(10);
     
+    console.log('💳 USER TRANSACTIONS FOUND:', userTransactions.length);
+    
     const userObject = user.toObject();
     const { password, ...userWithoutPassword } = userObject;
     
-    // Return data in exact format frontend expects
-    res.json({
+    const responseData = {
       user: {
         ...userWithoutPassword,
-        id: user._id, // Include id field
-        accountNumber: user.accountNumber // Make sure accountNumber is included
+        id: user._id.toString(), // Ensure it's a string
+        accountNumber: user.accountNumber
       },
       account: {
         balance: user.balance,
@@ -348,34 +445,55 @@ app.get('/api/dashboard', async (req, res) => {
         amount: t.amount,
         balance: t.balance_after
       }))
-    });
+    };
+    
+    console.log('✅ DASHBOARD RESPONSE SENT');
+    res.json(responseData);
+    
   } catch (error) {
-    console.error('Dashboard error:', error);
+    console.error('❌ DASHBOARD ERROR:', error);
     res.status(500).json({ message: 'Error loading dashboard' });
   }
 });
-// ✅ User transactions endpoint - FIXED VERSION
+
+/// ✅ User transactions endpoint - EXACT USER MATCHING
 app.get('/api/transactions', async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
-    let user;
     
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      const userIdMatch = token.match(/jwt-token-for-(.+)/);
-      
-      if (userIdMatch) {
-        const userId = userIdMatch[1];
-        user = await User.findById(userId);
-      }
+    console.log('💳 TRANSACTIONS REQUEST =================================');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'No authorization token' });
     }
+
+    const token = authHeader.substring(7);
+    console.log('🔐 TOKEN RECEIVED:', token);
+    
+    const userIdMatch = token.match(/jwt-token-for-(.+)/);
+    
+    if (!userIdMatch) {
+      return res.status(401).json({ message: 'Invalid token format' });
+    }
+
+    const userId = userIdMatch[1];
+    console.log('🔍 EXTRACTED USER ID:', userId);
+    
+    // Find the EXACT user
+    const user = await User.findById(userId);
     
     if (!user) {
-      return res.status(401).json({ message: 'User not authenticated' });
+      console.log('❌ USER NOT FOUND FOR TRANSACTIONS:', userId);
+      return res.status(401).json({ message: 'User not found' });
     }
+
+    console.log('✅ USER FOUND FOR TRANSACTIONS:', user.email);
     
+    // Get THIS USER'S transactions only
     const userTransactions = await Transaction.find({ userId: user._id })
       .sort({ date: -1 });
+
+    console.log('📊 TRANSACTIONS FOUND:', userTransactions.length);
     
     res.json({
       account_balance: user.balance,
@@ -389,6 +507,7 @@ app.get('/api/transactions', async (req, res) => {
         balance_after: parseFloat(t.balance_after)
       }))
     });
+    
   } catch (error) {
     console.error('Transactions error:', error);
     res.status(500).json({ message: 'Error loading transactions' });
@@ -472,5 +591,58 @@ app.get('/api/debug/user/:id', async (req, res) => {
   } catch (error) {
     console.error('Debug user error:', error);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ✅ GET available users for transactions (for admin panel)
+app.get('/api/admin/available-users', async (req, res) => {
+  try {
+    const users = await User.find({}, 'name email _id accountNumber balance');
+    console.log('📋 Available users for transactions:', users.length);
+    
+    res.json({
+      success: true,
+      users: users.map(user => ({
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        accountNumber: user.accountNumber,
+        balance: user.balance
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Error fetching users' });
+  }
+});
+
+// ✅ GET sample transaction test endpoint
+app.get('/api/admin/test-transaction', async (req, res) => {
+  try {
+    // Get the first user
+    const user = await User.findOne({ role: 'user' });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'No user found for test transaction' });
+    }
+
+    console.log('🎯 Test transaction for:', user.email);
+    
+    // Just return user info without creating actual transaction
+    res.json({
+      success: true,
+      message: 'Test endpoint working',
+      test_user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        current_balance: user.balance
+      },
+      note: 'This endpoint only shows user info. Use POST /api/admin/transactions to create real transactions.'
+    });
+
+  } catch (error) {
+    console.error('Test transaction error:', error);
+    res.status(500).json({ error: 'Test failed: ' + error.message });
   }
 });
