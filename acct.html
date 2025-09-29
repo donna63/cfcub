@@ -427,7 +427,25 @@
         </div>
     </div>
 
+    <script src="js/auth.js"></script>
+
     <script>
+
+        // Replace the beginning of your DOMContentLoaded with this:
+document.addEventListener('DOMContentLoaded', function() {
+    // Check authentication FIRST
+    const user = checkAuth();
+    if (!user) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    // Rest of your existing code...
+    document.getElementById('sidebarUserName').textContent = user.name;
+    loadAccountData();
+    
+    // ... keep the rest of your existing code
+});
         // Account data storage
         let accountData = null;
 

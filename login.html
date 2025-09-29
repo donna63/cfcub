@@ -262,52 +262,194 @@
 
     <script src="js/auth.js"></script>
 
-    <script>
+ 
+    <!-- <script src="js/auth.js"></script> -->
+<script>
 document.getElementById('loginForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     
-    console.log('🔄 Login attempt:', email);
+    console.log('🔐 Login attempt:', email);
     
-    // OFFLINE LOGIN - WORKS 100%
+    // SIMPLE LOGIN
+    let userData;
+    
     if (email === 'admin@unionbank.com' && password === 'admin123') {
-        console.log('✅ Admin login successful');
-        
-        localStorage.setItem('user', JSON.stringify({
+        userData = {
             id: 1,
             name: 'Admin User',
-            email: 'admin@unionbank.com',
+            email: email,
             role: 'admin',
             accountNumber: '1000001',
             balance: 10000
-        }));
-        localStorage.setItem('token', 'admin-token');
-        window.location.href = 'admin.html';
-        
+        };
     } else if (email.includes('@')) {
-        // Any email works as user (demo mode)
-        console.log('✅ User login successful');
-        
-        localStorage.setItem('user', JSON.stringify({
-            id: 2,
+        userData = {
+            id: Date.now(),
             name: email.split('@')[0],
             email: email,
             role: 'user',
-            accountNumber: 'UB' + Date.now().toString().slice(-6),
+            accountNumber: 'UB' + Date.now().toString().slice(-8),
             balance: 1000
-        }));
-        localStorage.setItem('token', 'user-token');
-        window.location.href = 'dashboard.html';
+        };
+    }
+    
+    if (userData) {
+        // Save user using our new function
+        saveUser(userData);
         
+        console.log('✅ Login successful, redirecting...');
+        
+        // Redirect with delay to ensure save completes
+        setTimeout(() => {
+            if (userData.role === 'admin') {
+                window.location.href = 'admin.html';
+            } else {
+                window.location.href = 'dashboard.html';
+            }
+        }, 100);
     } else {
-        alert('Login successful! Use:\nAdmin: admin@unionbank.com / admin123\nUser: any email / any password');
+        alert('Use:\nAdmin: admin@unionbank.com / admin123\nUser: any email / any password');
     }
 });
-
-
 </script>
+        <!-- <script>
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const submitBtn = this.querySelector('button[type="submit"]');
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
+    
+    try {
+        console.log('🔄 Login attempt:', email);
+        
+        const response = await fetch('https://banking-backend-hqe6.onrender.com/api/auth/login', {
+            method: 'POST',  // ← MUST BE POST
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password })
+        });
+        
+        console.log('📡 Response status:', response.status);
+        
+        const result = await response.json();
+        console.log('📡 Login response:', result);
+        
+        if (result.success) {
+            console.log('✅ Login successful!');
+            
+            // Save to localStorage
+            localStorage.setItem('token', result.token);
+            localStorage.setItem('user', JSON.stringify(result.user));
+            
+            // Redirect based on role
+            if (result.user.role === 'admin') {
+                window.location.href = 'admin.html';
+            } else {
+                window.location.href = 'dashboard.html';
+            }
+        } else {
+            alert('Login failed: ' + result.message);
+        }
+        
+    } catch (error) {
+        console.error('❌ Login error:', error);
+        alert('Login error: ' + error.message);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Sign In';
+    }
+});
+</script> -->
+
+<!-- <script>
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    
+    console.log('🔐 Login attempt:', email);
+    
+    // Use XMLHttpRequest instead of fetch (bypasses some restrictions)
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'https://banking-backend-hqe6.onrender.com/api/auth/login', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                const result = JSON.parse(xhr.responseText);
+                console.log('✅ Login successful:', result);
+                
+                if (result.success) {
+                    localStorage.setItem('token', result.token);
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    
+                    if (result.user.role === 'admin') {
+                        window.location.href = 'admin.html';
+                    } else {
+                        window.location.href = 'dashboard.html';
+                    }
+                } else {
+                    alert('Login failed: ' + result.message);
+                }
+            } else {
+                console.log('❌ Using offline login due to network restrictions');
+                useOfflineLogin(email, password);
+            }
+        }
+    };
+    
+    xhr.send(JSON.stringify({ email, password }));
+});
+
+function useOfflineLogin(email, password) {
+    let userData;
+    
+    if (email === 'admin@unionbank.com' && password === 'admin123') {
+        userData = {
+            id: 1,
+            name: 'Admin User',
+            email: email,
+            role: 'admin',
+            accountNumber: '1000001',
+            balance: 10000
+        };
+    } else if (email.includes('@')) {
+        userData = {
+            id: Date.now(),
+            name: email.split('@')[0],
+            email: email,
+            role: 'user', 
+            accountNumber: 'UB' + Date.now().toString().slice(-8),
+            balance: 1000
+        };
+    }
+    
+    if (userData) {
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('token', 'demo-token-' + userData.id);
+        
+        if (userData.role === 'admin') {
+            window.location.href = 'admin.html';
+        } else {
+            window.location.href = 'dashboard.html';
+        }
+    } else {
+        alert('Use:\nAdmin: admin@unionbank.com / admin123\nUser: any email / any password');
+    }
+}
+</script> -->
+
+
 
     <!-- <script src="js/auth.js"></script>
 <script>

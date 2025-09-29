@@ -188,7 +188,47 @@
         .menu-button:hover {
             transform: scale(1.05);
         }
+
+        .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.show {
+    display: flex;
+}
         
+
+        /* Force sidebar to be visible on desktop */
+@media (min-width: 769px) {
+    .sidebar {
+        transform: translateX(0) !important;
+        position: relative !important;
+    }
+    
+    .menu-button {
+        display: none !important;
+    }
+}
+
+/* Ensure main content has proper margin */
+main {
+    margin-left: 16rem !important; /* 256px - sidebar width */
+}
+
+/* Make sure sidebar overlay is hidden on desktop */
+.sidebar-overlay {
+    display: none !important;
+}
         @media (max-width: 768px) {
             .menu-button {
                 display: block;
@@ -1462,168 +1502,165 @@ if (accountNumberElement) {
 
 
 <script src="js/auth.js"></script>
+
+
 <script>
-   // Dashboard-specific functionality
-class Dashboard {
-    constructor() {
-        this.init();
-    }
+// DASHBOARD AUTH CHECK
+console.log('🔐 Checking dashboard authentication...');
+const user = checkAuth();
 
-    init() {
-        this.checkAuthentication();
-        this.setupEventListeners();
-        this.loadDashboardData();
-    }
+if (!user) {
+    console.log('❌ No user, redirecting to login');
+    window.location.href = 'login.html';
+} else {
+    console.log('✅ User authenticated:', user);
+    
+    // Initialize UI components
+    initializeSidebar();
+    initializeDarkMode();
+    
+    // Load data
+    loadDashboardData();
+}
 
-    checkAuthentication() {
-        if (!authSystem.requireAuth()) {
-            return;
-        }
+// ✅ FIXED Dashboard Data Loading
+async function loadDashboardData() {
+    try {
+        console.log('🔄 Loading dashboard data for user:', user.id);
         
-        const user = authSystem.getCurrentUser();
-        if (user) {
-            this.updateUserInfo(user);
-        }
-    }
-
-    updateUserInfo(user) {
-        // Update header user name
+        // Try to get dashboard data from backend
+        const dashboardData = await apiCall('/api/dashboard');
+        console.log('📊 Dashboard API response:', dashboardData);
+        
+        // Update user info
         const headerUserName = document.getElementById('headerUserName');
-        if (headerUserName) {
-            headerUserName.textContent = user.name;
-        }
-
-        // Update welcome message
         const welcomeName = document.querySelector('h1.text-3xl');
-        if (welcomeName) {
-            welcomeName.innerHTML = `Welcome back, <span class="text-primary">${user.name}</span>!`;
-        }
-    }
-
-    async loadDashboardData() {
-        try {
-            console.log('Loading dashboard data...');
-            const dashboardData = await authSystem.getDashboardData();
-            
-            this.updateAccountInfo(dashboardData.account);
-            this.updateTransactions(dashboardData.recent_transactions);
-            
-        } catch (error) {
-            console.error('Error loading dashboard data:', error);
-            this.showError('Failed to load dashboard data');
-        }
-    }
-
-    updateAccountInfo(account) {
+        if (headerUserName) headerUserName.textContent = dashboardData.user.name;
+        if (welcomeName) welcomeName.innerHTML = `Welcome back, <span>${dashboardData.user.name}</span>!`;
+        
+        // Update account balance with real data
+        const accountBalance = parseFloat(dashboardData.account.balance);
+        console.log('💰 Account balance:', accountBalance);
+        
+        const formattedBalance = accountBalance.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+        
+        // Update the balance display
         const balanceElement = document.getElementById('mainBalance');
         const accountNumberElement = document.getElementById('mainAccountNumber');
         
         if (balanceElement) {
-            balanceElement.textContent = `$${account.balance.toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            })}`;
+            balanceElement.textContent = `$${formattedBalance}`;
+            console.log('✅ Balance updated to:', balanceElement.textContent);
         }
-        
         if (accountNumberElement) {
-            accountNumberElement.textContent = `Account number: ${account.account_number}`;
+            accountNumberElement.textContent = `Account number: ${dashboardData.account.account_number}`;
         }
         
-        console.log('Account info updated:', account);
+        // Update recent transactions table
+        updateTransactionsTable(dashboardData.recent_transactions);
+        
+    } catch (error) {
+        console.error('❌ Error loading dashboard data:', error);
+        // Fallback to user data from login
+        useFallbackData();
     }
+}
 
-    updateTransactions(transactions) {
-        const tbody = document.querySelector('.overflow-x-auto tbody');
-        if (!tbody) return;
-
-        if (!transactions || transactions.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="4" class="px-6 py-4 text-center text-muted-foreground">
-                        No transactions yet
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-
-        tbody.innerHTML = transactions.map(transaction => `
-            <tr class="border-b hover:bg-muted/50 transition-colors">
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                    ${new Date(transaction.date).toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'short', 
-                        day: 'numeric' 
-                    })}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                    ${transaction.description}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                    transaction.type === 'deposit' ? 'text-green-600' : 'text-red-600'
-                }">
-                    ${transaction.type === 'deposit' ? '+' : '-'}$${parseFloat(transaction.amount).toFixed(2)}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                    $${parseFloat(transaction.balance).toLocaleString('en-US', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    })}
+// ✅ Update transactions table
+function updateTransactionsTable(transactions) {
+    const tbody = document.querySelector('.overflow-x-auto tbody');
+    
+    if (!transactions || transactions.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="px-6 py-4 text-center text-muted-foreground">
+                    No transactions yet
                 </td>
             </tr>
-        `).join('');
-
-        console.log('Transactions updated:', transactions);
+        `;
+        console.log('📋 No transactions to display');
+        return;
     }
+    
+    console.log('📋 Displaying transactions:', transactions);
+    
+    tbody.innerHTML = transactions.map(transaction => `
+        <tr class="border-b hover:bg-muted/50 transition-colors">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                ${new Date(transaction.date).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                })}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                ${transaction.description}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                transaction.type === 'deposit' ? 'text-green-600' : 'text-red-600'
+            }">
+                ${transaction.type === 'deposit' ? '+' : '-'}$${parseFloat(transaction.amount).toFixed(2)}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                $${parseFloat(transaction.balance).toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                })}
+            </td>
+        </tr>
+    `).join('');
+}
 
-    setupEventListeners() {
-        // Dark mode toggle
-        document.getElementById('darkModeToggle').addEventListener('click', this.toggleDarkMode);
+// ✅ Fallback data if API fails
+function useFallbackData() {
+    console.log('🔄 Using fallback data');
+    
+    const user = checkAuth();
+    if (!user) return;
+    
+    // Update with basic user info
+    const headerUserName = document.getElementById('headerUserName');
+    const welcomeName = document.querySelector('h1.text-3xl');
+    const balanceElement = document.getElementById('mainBalance');
+    const accountNumberElement = document.getElementById('mainAccountNumber');
+    
+    if (headerUserName) headerUserName.textContent = user.name;
+    if (welcomeName) welcomeName.innerHTML = `Welcome back, <span>${user.name}</span>!`;
+    if (balanceElement) balanceElement.textContent = `$${user.balance}`;
+    if (accountNumberElement) accountNumberElement.textContent = `Account number: ${user.accountNumber}`;
+    
+    // Show empty transactions
+    const tbody = document.querySelector('.overflow-x-auto tbody');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="4" class="px-6 py-4 text-center text-muted-foreground">
+                No transactions yet
+            </td>
+        </tr>
+    `;
+}
 
-        // Logout functionality
-        document.getElementById('logoutLink').addEventListener('click', (e) => {
-            e.preventDefault();
-            authSystem.logout();
-        });
 
-        // Sidebar functionality
-        this.setupSidebar();
 
-        // Transfer modal functionality
-        this.setupTransferModal();
-    }
+// ✅ Initialize Sidebar
+function initializeSidebar() {
+    const menuButton = document.getElementById('menuButton');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const mainContent = document.getElementById('mainContent');
 
-    toggleDarkMode() {
-        document.documentElement.classList.toggle('dark');
-        const sunIcon = document.getElementById('sunIcon');
-        const moonIcon = document.getElementById('moonIcon');
-        
-        if (document.documentElement.classList.contains('dark')) {
-            sunIcon.classList.remove('hidden');
-            moonIcon.classList.add('hidden');
-        } else {
-            sunIcon.classList.add('hidden');
-            moonIcon.classList.remove('hidden');
-        }
-    }
-
-    setupSidebar() {
-        const menuButton = document.getElementById('menuButton');
-        const sidebar = document.getElementById('sidebar');
-        const sidebarOverlay = document.getElementById('sidebarOverlay');
-
-        const toggleSidebar = () => {
+    // Only setup mobile functionality if elements exist
+    if (menuButton && sidebar && sidebarOverlay) {
+        function toggleSidebar() {
             sidebar.classList.toggle('open');
             sidebarOverlay.classList.toggle('open');
-        };
-
-        if (menuButton) {
-            menuButton.addEventListener('click', toggleSidebar);
         }
 
-        if (sidebarOverlay) {
-            sidebarOverlay.addEventListener('click', toggleSidebar);
-        }
+        menuButton.addEventListener('click', toggleSidebar);
+        sidebarOverlay.addEventListener('click', toggleSidebar);
 
         // Close sidebar when clicking on a link (mobile)
         document.querySelectorAll('.sidebar-link').forEach(link => {
@@ -1648,75 +1685,302 @@ class Dashboard {
         if (window.innerWidth >= 769) {
             sidebar.classList.add('open');
         }
-    }
-
-    setupTransferModal() {
-        // Transfer modal functions
-        window.openTransferModal = () => {
-            this.updateTransferModalBalance();
-            document.getElementById('transferModal').classList.add('show');
-        };
-
-        window.closeTransferModal = () => {
-            document.getElementById('transferModal').classList.remove('show');
-            document.getElementById('transferForm').reset();
-        };
-
-        // Close modal when clicking outside
-        document.getElementById('transferModal').addEventListener('click', (e) => {
-            if (e.target === this) {
-                window.closeTransferModal();
-            }
-        });
-
-        // Transfer form submission
-        document.getElementById('transferForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleTransfer();
-        });
-    }
-
-    updateTransferModalBalance() {
-        const user = authSystem.getCurrentUser();
-        if (!user) return;
-
-        const balanceElement = document.getElementById('mainBalance');
-        if (balanceElement) {
-            const currentBalance = parseFloat(balanceElement.textContent.replace('$', '').replace(/,/g, '')) || user.balance;
-            
-            document.getElementById('currentBalanceDisplay').textContent = 
-                `$${currentBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-            document.getElementById('availableBalance').textContent = 
-                `$${currentBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-        }
-    }
-
-    handleTransfer() {
-        const amount = parseFloat(document.getElementById('amount').value);
-        const memo = document.getElementById('memo').value;
-
-        if (!amount || amount <= 0) {
-            this.showError('Please enter a valid amount');
-            return;
-        }
-
-        // Simulate transfer processing
-        alert(`Transfer initiated!\n\nAmount: $${amount.toFixed(2)}\nMemo: ${memo || 'No memo'}`);
-        window.closeTransferModal();
-    }
-
-    showError(message) {
-        // You can implement a better error notification system here
-        console.error('Dashboard Error:', message);
-        alert(message);
+    } else {
+        console.log('⚠️ Sidebar elements not found, using fallback layout');
     }
 }
 
-// Initialize dashboard when page loads
+// ✅ Initialize Dark Mode Toggle
+function initializeDarkMode() {
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    if (darkModeToggle) {
+        darkModeToggle.addEventListener('click', function() {
+            document.documentElement.classList.toggle('dark');
+            const sunIcon = document.getElementById('sunIcon');
+            const moonIcon = document.getElementById('moonIcon');
+            
+            if (document.documentElement.classList.contains('dark')) {
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            } else {
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            }
+        });
+    }
+}
+
+
+// Add this script to your dashboard.html file
+
+// ✅ Transfer Modal Functionality
+let currentBalance = 0;
+let currentAccountNumber = '';
+
+function openTransferModal() {
+    console.log('Opening transfer modal...');
+    
+    // Load current balance and account info
+    updateTransferModalBalance();
+    
+    // Show the modal
+    const modal = document.getElementById('transferModal');
+    if (modal) {
+        modal.classList.add('show');
+        modal.style.display = 'flex';
+        console.log('Modal should be visible now');
+    } else {
+        console.error('Transfer modal not found!');
+    }
+    
+    // Reset form to internal transfer
+    showInternalTransfer();
+    updateTransferSummary();
+}
+
+function closeTransferModal() {
+    console.log('Closing transfer modal...');
+    const modal = document.getElementById('transferModal');
+    if (modal) {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+    }
+    document.getElementById('transferForm').reset();
+    document.getElementById('amountError').classList.add('hidden');
+    document.getElementById('transferSummary').classList.add('hidden');
+}
+
+function updateTransferModalBalance() {
+    const balanceElement = document.getElementById('mainBalance');
+    const accountNumberElement = document.getElementById('mainAccountNumber');
+    
+    if (balanceElement && accountNumberElement) {
+        // Extract numeric value from balance text
+        const balanceText = balanceElement.textContent.replace('$', '').replace(/,/g, '');
+        currentBalance = parseFloat(balanceText) || 0;
+        currentAccountNumber = accountNumberElement.textContent.replace('Account number: ', '') || 'Loading...';
+        
+        document.getElementById('currentBalanceDisplay').textContent = `$${currentBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        document.getElementById('currentAccountNumber').textContent = `Account: ${currentAccountNumber}`;
+        document.getElementById('availableBalance').textContent = `$${currentBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    }
+}
+
+function showInternalTransfer() {
+    document.getElementById('internalTransferBtn').classList.add('bg-primary', 'text-white');
+    document.getElementById('externalTransferBtn').classList.remove('bg-primary', 'text-white');
+    document.getElementById('internalTransferBtn').classList.remove('bg-muted', 'text-foreground');
+    document.getElementById('externalTransferBtn').classList.add('bg-muted', 'text-foreground');
+    
+    document.getElementById('internalTransferFields').classList.remove('hidden');
+    document.getElementById('externalTransferFields').classList.add('hidden');
+    
+    updateTransferSummary();
+}
+
+function showExternalTransfer() {
+    document.getElementById('externalTransferBtn').classList.add('bg-primary', 'text-white');
+    document.getElementById('internalTransferBtn').classList.remove('bg-primary', 'text-white');
+    document.getElementById('externalTransferBtn').classList.remove('bg-muted', 'text-foreground');
+    document.getElementById('internalTransferBtn').classList.add('bg-muted', 'text-foreground');
+    
+    document.getElementById('externalTransferFields').classList.remove('hidden');
+    document.getElementById('internalTransferFields').classList.add('hidden');
+    
+    updateTransferSummary();
+}
+
+function setMaxAmount() {
+    const maxAmount = currentBalance - 0.01; // Leave $0.01 in account
+    document.getElementById('amount').value = maxAmount.toFixed(2);
+    updateTransferSummary();
+}
+
+function updateTransferSummary() {
+    const amount = parseFloat(document.getElementById('amount').value) || 0;
+    const memo = document.getElementById('memo').value;
+    
+    if (amount > 0) {
+        document.getElementById('transferSummary').classList.remove('hidden');
+        
+        // Determine transfer type and recipient
+        let recipientInfo = '';
+        if (document.getElementById('internalTransferFields').classList.contains('hidden')) {
+            // External transfer
+            const recipientName = document.getElementById('recipientName').value || 'External Account';
+            const bankName = document.getElementById('bankName').value || 'External Bank';
+            recipientInfo = `${recipientName} (${bankName})`;
+        } else {
+            // Internal transfer
+            const toAccount = document.getElementById('toInternalAccount').value;
+            recipientInfo = toAccount ? `${toAccount.charAt(0).toUpperCase() + toAccount.slice(1)} Account` : 'Select account';
+        }
+        
+        document.getElementById('summaryFrom').textContent = 'Primary Account';
+        document.getElementById('summaryTo').textContent = recipientInfo;
+        document.getElementById('summaryAmount').textContent = `$${amount.toFixed(2)}`;
+    } else {
+        document.getElementById('transferSummary').classList.add('hidden');
+    }
+}
+
+// Initialize transfer functionality when page loads
 document.addEventListener('DOMContentLoaded', function() {
-    window.dashboard = new Dashboard();
+    console.log('Initializing transfer modal...');
+    
+    // Add event listeners for transfer type buttons
+    const internalBtn = document.getElementById('internalTransferBtn');
+    const externalBtn = document.getElementById('externalTransferBtn');
+    
+    if (internalBtn) {
+        internalBtn.addEventListener('click', showInternalTransfer);
+    }
+    if (externalBtn) {
+        externalBtn.addEventListener('click', showExternalTransfer);
+    }
+
+    // Transfer form validation and submission
+    const transferForm = document.getElementById('transferForm');
+    if (transferForm) {
+        transferForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const amount = parseFloat(document.getElementById('amount').value);
+            const memo = document.getElementById('memo').value;
+            const amountError = document.getElementById('amountError');
+            const isExternalTransfer = document.getElementById('externalTransferFields').classList.contains('hidden') === false;
+            
+            // Reset errors
+            amountError.classList.add('hidden');
+            
+            let isValid = true;
+
+            // Basic validation
+            if (!amount || amount <= 0) {
+                amountError.textContent = 'Please enter a valid amount greater than 0';
+                amountError.classList.remove('hidden');
+                isValid = false;
+            }
+
+            if (amount > currentBalance) {
+                amountError.textContent = 'Insufficient funds in your account';
+                amountError.classList.remove('hidden');
+                isValid = false;
+            }
+
+            if (amount < 1.00) {
+                amountError.textContent = 'Minimum transfer amount is $1.00';
+                amountError.classList.remove('hidden');
+                isValid = false;
+            }
+
+            // External transfer validation
+            if (isExternalTransfer) {
+                const recipientName = document.getElementById('recipientName').value;
+                const routingNumber = document.getElementById('routingNumber').value;
+                const accountNumber = document.getElementById('accountNumber').value;
+                const bankName = document.getElementById('bankName').value;
+                
+                if (!recipientName) {
+                    alert('Please enter recipient name');
+                    isValid = false;
+                }
+                
+                if (!routingNumber || !/^\d{9}$/.test(routingNumber)) {
+                    alert('Please enter a valid 9-digit routing number');
+                    isValid = false;
+                }
+                
+                if (!accountNumber) {
+                    alert('Please enter recipient account number');
+                    isValid = false;
+                }
+                
+                if (!bankName) {
+                    alert('Please enter bank name');
+                    isValid = false;
+                }
+            } else {
+                // Internal transfer validation
+                const toAccount = document.getElementById('toInternalAccount').value;
+                if (!toAccount) {
+                    alert('Please select an internal account to transfer to');
+                    isValid = false;
+                }
+            }
+
+            if (isValid) {
+                // Prepare transfer details
+                const transferDetails = {
+                    amount: amount,
+                    memo: memo,
+                    type: isExternalTransfer ? 'external' : 'internal',
+                    timestamp: new Date().toISOString()
+                };
+
+                if (isExternalTransfer) {
+                    transferDetails.recipient = {
+                        name: document.getElementById('recipientName').value,
+                        routingNumber: document.getElementById('routingNumber').value,
+                        accountNumber: document.getElementById('accountNumber').value,
+                        bankName: document.getElementById('bankName').value
+                    };
+                } else {
+                    transferDetails.toAccount = document.getElementById('toInternalAccount').value;
+                }
+
+                // Simulate transfer processing
+                const transferMessage = isExternalTransfer ? 
+                    `External transfer initiated!\n\nAmount: $${amount.toFixed(2)}\nTo: ${transferDetails.recipient.name}\nBank: ${transferDetails.recipient.bankName}\nRouting: ${transferDetails.recipient.routingNumber}\nAccount: ${transferDetails.recipient.accountNumber}\n${memo ? 'Memo: ' + memo : ''}` :
+                    `Internal transfer initiated!\n\nAmount: $${amount.toFixed(2)}\nFrom: Primary Account\nTo: ${transferDetails.toAccount} Account\n${memo ? 'Memo: ' + memo : ''}`;
+
+                alert(transferMessage + '\n\nYou need a debit card to transfer!');
+                closeTransferModal();
+                
+                // In a real app, you would make an API call here
+                // await apiCall('/transfer', { method: 'POST', body: JSON.stringify(transferDetails) });
+            }
+        });
+    }
+
+    // Add real-time validation and summary updates
+    const amountInput = document.getElementById('amount');
+    const memoInput = document.getElementById('memo');
+    const toInternalAccount = document.getElementById('toInternalAccount');
+    const recipientName = document.getElementById('recipientName');
+    const routingNumber = document.getElementById('routingNumber');
+    const accountNumber = document.getElementById('accountNumber');
+    const bankName = document.getElementById('bankName');
+    
+    if (amountInput) amountInput.addEventListener('input', updateTransferSummary);
+    if (memoInput) memoInput.addEventListener('input', updateTransferSummary);
+    if (toInternalAccount) toInternalAccount.addEventListener('change', updateTransferSummary);
+    if (recipientName) recipientName.addEventListener('input', updateTransferSummary);
+    if (routingNumber) routingNumber.addEventListener('input', updateTransferSummary);
+    if (accountNumber) accountNumber.addEventListener('input', updateTransferSummary);
+    if (bankName) bankName.addEventListener('input', updateTransferSummary);
+
+    // Close modal when clicking outside
+    const modal = document.getElementById('transferModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeTransferModal();
+            }
+        });
+    }
+    
+    console.log('Transfer modal initialized successfully');
 });
+
+
+
+
+
+
+
 </script>
+
 
 
 </body>
