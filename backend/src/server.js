@@ -727,7 +727,7 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 // MongoDB connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/banking';
+const MONGODB_URI = process.env.DATABASE_URL || process.env.MONGODB_URI || 'mongodb://localhost:27017/banking';
 const DB_NAME = 'banking';
 let db, usersCollection, transactionsCollection;
 
