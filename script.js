@@ -294,3 +294,193 @@ if (typeof module !== 'undefined' && module.exports) {
         showNotification
     };
 }
+
+// ✅ Create user endpoint
+app.post('/api/users', async (req, res) => {
+  try {
+    const { name, email, password, initialBalance = 0 } = req.body;
+    
+    console.log('Creating user:', { name, email, initialBalance });
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: 'User with this email already exists' });
+    }
+
+    // Create new user
+    const newUser = await User.create({
+      name,
+      email,
+      password, // In real app, hash this!
+      role: 'user',
+      accountNumber: `UB${Date.now().toString().slice(-8)}`,
+      balance: parseFloat(initialBalance) || 0,
+    });
+
+    // Create initial transaction if balance > 0
+    if (initialBalance > 0) {
+      await Transaction.create({
+        userId: newUser._id,
+        type: 'deposit',
+        amount: parseFloat(initialBalance),
+        description: 'Initial account funding',
+        balance_after: parseFloat(initialBalance),
+      });
+    }
+
+    // Return user without password
+    const userObject = newUser.toObject();
+    const { password: _, ...userWithoutPassword } = userObject;
+    
+    res.status(201).json({
+      success: true,
+      message: 'User created successfully',
+      user: userWithoutPassword
+    });
+
+  } catch (error) {
+    console.error('User creation error:', error);
+    res.status(500).json({ error: 'Error creating user' });
+  }
+});
+
+// ✅ ADMIN ADD TRANSACTION ENDPOINT
+app.post('/api/admin/transactions', async (req, res) => {
+  try {
+    const { userId, type, amount, description } = req.body;
+    
+    console.log('Adding transaction:', { userId, type, amount, description });
+
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    let newBalance = user.balance;
+
+    // Update balance based on transaction type
+    if (type === 'deposit') {
+      newBalance += parseFloat(amount);
+    } else if (type === 'withdrawal') {
+      if (user.balance < amount) {
+        return res.status(400).json({ error: 'Insufficient funds' });
+      }
+      newBalance -= parseFloat(amount);
+    }
+
+    // Update user balance
+    user.balance = newBalance;
+    await user.save();
+
+    // Create transaction record
+    const newTransaction = await Transaction.create({
+      userId: user._id,
+      type,
+      amount: parseFloat(amount),
+      description,
+      balance_after: newBalance,
+    });
+
+    res.json({
+      success: true,
+      new_balance: newBalance.toFixed(2),
+      transaction: newTransaction
+    });
+
+  } catch (error) {
+    console.error('Transaction error:', error);
+    res.status(500).json({ error: 'Error processing transaction' });
+  }
+});
+
+// ✅ User dashboard endpoint
+app.get('/api/dashboard', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    let user;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      const userIdMatch = token.match(/jwt-token-for-(.+)/);
+      
+      if (userIdMatch) {
+        const userId = userIdMatch[1];
+        user = await User.findById(userId);
+      }
+    }
+    
+    if (!user) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+    
+    const userTransactions = await Transaction.find({ userId: user._id })
+      .sort({ date: -1 })
+      .limit(10);
+    
+    const userObject = user.toObject();
+    const { password, ...userWithoutPassword } = userObject;
+    
+    res.json({
+      user: userWithoutPassword,
+      account: {
+        balance: user.balance,
+        account_number: user.accountNumber,
+        account_type: "Primary",
+        status: "Active"
+      },
+      recent_transactions: userTransactions.map(t => ({
+        date: t.date,
+        description: t.description,
+        type: t.type,
+        amount: t.amount,
+        balance: t.balance_after
+      }))
+    });
+  } catch (error) {
+    console.error('Dashboard error:', error);
+    res.status(500).json({ message: 'Error loading dashboard' });
+  }
+});
+
+// ✅ User transactions endpoint
+app.get('/api/transactions', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    let user;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      const userIdMatch = token.match(/jwt-token-for-(.+)/);
+      
+      if (userIdMatch) {
+        const userId = userIdMatch[1];
+        user = await User.findById(userId);
+      }
+    }
+    
+    if (!user) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+    
+    const userTransactions = await Transaction.find({ userId: user._id })
+      .sort({ date: -1 });
+    
+    res.json({
+      account_balance: user.balance,
+      total_count: userTransactions.length,
+      transactions: userTransactions.map(t => ({
+        id: t._id,
+        type: t.type,
+        amount: t.amount,
+        description: t.description,
+        date: t.date,
+        balance_after: t.balance_after
+      }))
+    });
+  } catch (error) {
+    console.error('Transactions error:', error);
+    res.status(500).json({ message: 'Error loading transactions' });
+  }
+});
