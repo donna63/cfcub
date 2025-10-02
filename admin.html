@@ -359,44 +359,36 @@ document.getElementById('createUserForm').addEventListener('submit', async funct
     }
 });
 
-      async function addSampleTransactions(userId) {
-    if (!confirm('Add sample transactions for this user?')) return;
+        async function addSampleTransactions(userId) {
+            if (!confirm('Add sample transactions for this user?')) return;
 
-    try {
-        const transactions = [
-            { type: 'deposit', amount: 1000, description: 'Initial account funding' },
-            { type: 'deposit', amount: 2500, description: 'Salary deposit' },
-            { type: 'withdrawal', amount: 500, description: 'Rent payment' },
-            { type: 'withdrawal', amount: 150, description: 'Grocery shopping' },
-            { type: 'deposit', amount: 300, description: 'Freelance payment' }
-        ];
-
-        let successCount = 0;
-        
-        for (const transaction of transactions) {
             try {
-                await apiCall('/api/admin/transactions', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        userId: userId,
-                        type: transaction.type,
-                        amount: transaction.amount,
-                        description: transaction.description
-                    })
-                });
-                successCount++;
+                const transactions = [
+                    { type: 'deposit', amount: 1000, description: 'Initial account funding' },
+                    { type: 'deposit', amount: 2500, description: 'Salary deposit' },
+                    { type: 'withdrawal', amount: 500, description: 'Rent payment' },
+                    { type: 'withdrawal', amount: 150, description: 'Grocery shopping' },
+                    { type: 'deposit', amount: 300, description: 'Freelance payment' }
+                ];
+
+                for (const transaction of transactions) {
+                    await apiCall('api/admin/transactions', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            userId: userId,
+                            type: transaction.type,
+                            amount: transaction.amount,
+                            description: transaction.description
+                        })
+                    });
+                }
+
+                alert('✅ Sample transactions added successfully!');
+                await loadAdminData();
             } catch (error) {
-                console.error(`Failed to add transaction: ${transaction.description}`, error);
+                alert('❌ Error adding sample transactions: ' + error.message);
             }
         }
-
-        alert(`✅ ${successCount}/${transactions.length} sample transactions added successfully!`);
-        await loadAdminData(); // Refresh the data
-        
-    } catch (error) {
-        alert('❌ Error adding sample transactions: ' + error.message);
-    }
-}
 
         // Initialize admin dashboard
         document.addEventListener('DOMContentLoaded', function() {
