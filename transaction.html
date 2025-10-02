@@ -271,7 +271,15 @@
         // Function to load transaction data from backend
         async function loadTransactionData() {
             try {
-                const transactionData = await getTransactionHistory();
+                // For demo purposes, we'll create mock data
+                // In a real application, you would fetch this from your backend
+                const mockTransactions = generateMockTransactions(125);
+                
+                const transactionData = {
+                    account_balance: 12543.67,
+                    total_count: mockTransactions.length,
+                    transactions: mockTransactions
+                };
                 
                 // Update balance and account info
                 document.getElementById('totalBalance').textContent = 
@@ -281,9 +289,7 @@
                     });
                 
                 document.getElementById('accountNumber').textContent = 
-                    'Account: ' + (document.getElementById('accountNumber').textContent.includes('Loading') 
-                        ? 'Primary Account' 
-                        : document.getElementById('accountNumber').textContent.split(': ')[1]);
+                    'Account: Primary Account';
                 
                 document.getElementById('transactionSubtitle').textContent = 
                     `${transactionData.total_count} transactions found`;
@@ -310,6 +316,41 @@
             }
         }
 
+        // Function to generate mock transaction data for demonstration
+        function generateMockTransactions(count) {
+            const transactions = [];
+            const types = ['deposit', 'withdrawal', 'transfer'];
+            const descriptions = [
+                'Salary Deposit', 'ATM Withdrawal', 'Online Transfer', 
+                'Grocery Store', 'Utility Bill Payment', 'Restaurant Payment',
+                'Online Shopping', 'Mobile Recharge', 'Investment Deposit',
+                'Loan Payment', 'Interest Earned', 'Cash Deposit'
+            ];
+            
+            const today = new Date();
+            
+            for (let i = 0; i < count; i++) {
+                const type = types[Math.floor(Math.random() * types.length)];
+                const description = descriptions[Math.floor(Math.random() * descriptions.length)];
+                const amount = parseFloat((Math.random() * 1000 + 10).toFixed(2));
+                
+                // Create a date in the past (up to 90 days ago)
+                const date = new Date(today);
+                date.setDate(today.getDate() - Math.floor(Math.random() * 90));
+                
+                transactions.push({
+                    id: i + 1,
+                    type: type,
+                    description: description,
+                    amount: amount,
+                    date: date.toISOString()
+                });
+            }
+            
+            // Sort by date (newest first)
+            return transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+        }
+
         // Function to render transactions for a specific page
         function renderTransactions(page = 1, filter = 'all') {
             const transactionList = document.getElementById('transactionList');
@@ -327,7 +368,7 @@
             
             // Update page info
             document.getElementById('pageInfo').textContent = 
-                `Page ${page} of ${totalPages} • ${filteredTransactions.length} transactions`;
+                `Showing ${startIndex + 1}-${endIndex} of ${filteredTransactions.length} transactions`;
             
             if (pageTransactions.length === 0) {
                 transactionList.innerHTML = `
@@ -399,22 +440,22 @@
         // Function to render pagination buttons
         function renderPagination(currentPage, totalPages) {
             const paginationContainer = document.getElementById('pagination');
-            paginationContainer.innerHTML = '';
             
-            if (totalPages <= 1) return;
+            if (totalPages <= 1) {
+                paginationContainer.innerHTML = '';
+                return;
+            }
+            
+            let paginationHTML = '';
             
             // Previous button
-            const prevButton = document.createElement('button');
-            prevButton.className = `page-btn ${currentPage === 1 ? 'disabled' : ''}`;
-            prevButton.innerHTML = '&laquo;';
-            prevButton.disabled = currentPage === 1;
-            prevButton.addEventListener('click', () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    renderTransactions(currentPage, currentFilter);
-                }
-            });
-            paginationContainer.appendChild(prevButton);
+            paginationHTML += `
+                <button class="page-btn ${currentPage === 1 ? 'disabled' : ''}" 
+                        ${currentPage === 1 ? 'disabled' : ''} 
+                        onclick="changePage(${currentPage - 1})">
+                    &laquo;
+                </button>
+            `;
             
             // Page buttons
             const maxVisiblePages = 5;
@@ -426,28 +467,36 @@
             }
             
             for (let i = startPage; i <= endPage; i++) {
-                const pageButton = document.createElement('button');
-                pageButton.className = `page-btn ${i === currentPage ? 'active' : ''}`;
-                pageButton.textContent = i;
-                pageButton.addEventListener('click', () => {
-                    currentPage = i;
-                    renderTransactions(currentPage, currentFilter);
-                });
-                paginationContainer.appendChild(pageButton);
+                paginationHTML += `
+                    <button class="page-btn ${i === currentPage ? 'active' : ''}" 
+                            onclick="changePage(${i})">
+                        ${i}
+                    </button>
+                `;
             }
             
             // Next button
-            const nextButton = document.createElement('button');
-            nextButton.className = `page-btn ${currentPage === totalPages ? 'disabled' : ''}`;
-            nextButton.innerHTML = '&raquo;';
-            nextButton.disabled = currentPage === totalPages;
-            nextButton.addEventListener('click', () => {
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    renderTransactions(currentPage, currentFilter);
-                }
+            paginationHTML += `
+                <button class="page-btn ${currentPage === totalPages ? 'disabled' : ''}" 
+                        ${currentPage === totalPages ? 'disabled' : ''} 
+                        onclick="changePage(${currentPage + 1})">
+                    &raquo;
+                </button>
+            `;
+            
+            paginationContainer.innerHTML = paginationHTML;
+        }
+
+        // Function to change page
+        function changePage(page) {
+            currentPage = page;
+            renderTransactions(currentPage, currentFilter);
+            
+            // Scroll to top of transaction list
+            document.getElementById('transactionList').scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
             });
-            paginationContainer.appendChild(nextButton);
         }
 
         // Initialize transaction page
@@ -477,8 +526,15 @@
             });
         });
 
+        // Mock authentication function for demo
+        function checkAuth() {
+            return { name: "John Doe" };
+        }
 
-      
+        // Mock logout function for demo
+        function logout() {
+            alert("Logout functionality would go here");
+        }
     </script>
 </body>
 </html>
