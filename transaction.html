@@ -310,91 +310,164 @@
             }
         }
 
-        // Function to render transactions for a specific page
-        function renderTransactions(page = 1, filter = 'all') {
-            const transactionList = document.getElementById('transactionList');
-            
-            // Filter transactions
-            const filteredTransactions = filter === 'all' 
-                ? allTransactions 
-                : allTransactions.filter(t => t.type === filter);
-            
-            // Calculate pagination
-            const totalPages = Math.ceil(filteredTransactions.length / transactionsPerPage);
-            const startIndex = (page - 1) * transactionsPerPage;
-            const endIndex = Math.min(startIndex + transactionsPerPage, filteredTransactions.length);
-            const pageTransactions = filteredTransactions.slice(startIndex, endIndex);
-            
-            // Update page info
-            document.getElementById('pageInfo').textContent = 
-                `Page ${page} of ${totalPages} • ${filteredTransactions.length} transactions`;
-            
-            if (pageTransactions.length === 0) {
-                transactionList.innerHTML = `
-                    <div class="p-8 text-center text-gray-500">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        <p class="mt-4">No ${filter === 'all' ? '' : filter + ' '}transactions found.</p>
-                    </div>
-                `;
-                
-                renderPagination(1, 1);
-                return;
-            }
-            
-            // Render transactions
-            let transactionsHTML = '';
-            pageTransactions.forEach((transaction, index) => {
-                const isDeposit = transaction.type === 'deposit';
-                const iconBgColor = isDeposit ? 'bg-green-100' : 'bg-red-100';
-                const iconColor = isDeposit ? 'text-green-600' : 'text-red-600';
-                const amountClass = isDeposit ? 'deposit' : 'withdrawal';
-                const amountSign = isDeposit ? '+' : '-';
-                
-                const transactionDate = new Date(transaction.date);
-                const formattedDate = transactionDate.toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric'
-                });
-                
-                const formattedTime = transactionDate.toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                
-                transactionsHTML += `
-                    <div class="transaction-item px-6 py-4 animate-in" style="animation-delay: ${index * 0.05}s">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center">
-                                <div class="transaction-icon ${iconBgColor}">
-                                    <svg class="h-5 w-5 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${icons[transaction.type] || icons.deposit}"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 class="font-medium text-gray-900">${transaction.description}</h3>
-                                    <p class="text-sm text-gray-500">${formattedDate} at ${formattedTime}</p>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <p class="font-semibold ${amountClass}">
-                                    ${amountSign}$${parseFloat(transaction.amount).toLocaleString('en-US', {
-                                        minimumFractionDigits: 2,
-                                        maximumFractionDigits: 2
-                                    })}
-                                </p>
-                                <p class="text-xs text-gray-500 capitalize">${transaction.type}</p>
-                            </div>
+      // Function to render transactions for a specific page - NO DATES
+function renderTransactions(page = 1, filter = 'all') {
+    const transactionList = document.getElementById('transactionList');
+    
+    // Filter transactions
+    const filteredTransactions = filter === 'all' 
+        ? allTransactions 
+        : allTransactions.filter(t => t.type === filter);
+    
+    // Calculate pagination
+    const totalPages = Math.ceil(filteredTransactions.length / transactionsPerPage);
+    const startIndex = (page - 1) * transactionsPerPage;
+    const endIndex = Math.min(startIndex + transactionsPerPage, filteredTransactions.length);
+    const pageTransactions = filteredTransactions.slice(startIndex, endIndex);
+    
+    // Update page info
+    document.getElementById('pageInfo').textContent = 
+        `Page ${page} of ${totalPages} • ${filteredTransactions.length} transactions`;
+    
+    if (pageTransactions.length === 0) {
+        transactionList.innerHTML = `
+            <div class="p-8 text-center text-gray-500">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <p class="mt-4">No ${filter === 'all' ? '' : filter + ' '}transactions found.</p>
+            </div>
+        `;
+        
+        renderPagination(1, 1);
+        return;
+    }
+    
+    // Render transactions WITHOUT DATES
+    let transactionsHTML = '';
+    pageTransactions.forEach((transaction, index) => {
+        const isDeposit = transaction.type === 'deposit';
+        const iconBgColor = isDeposit ? 'bg-green-100' : 'bg-red-100';
+        const iconColor = isDeposit ? 'text-green-600' : 'text-red-600';
+        const amountClass = isDeposit ? 'deposit' : 'withdrawal';
+        const amountSign = isDeposit ? '+' : '-';
+        
+        transactionsHTML += `
+            <div class="transaction-item px-6 py-4 animate-in" style="animation-delay: ${index * 0.05}s">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="transaction-icon ${iconBgColor}">
+                            <svg class="h-5 w-5 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${icons[transaction.type] || icons.deposit}"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-900">${transaction.description}</h3>
+                            <p class="text-xs text-gray-400">Balance: $${parseFloat(transaction.balance_after || transaction.balance).toFixed(2)}</p>
                         </div>
                     </div>
-                `;
-            });
+                    <div class="text-right">
+                        <p class="font-semibold ${amountClass}">
+                            ${amountSign}$${parseFloat(transaction.amount).toLocaleString('en-US', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            })}
+                        </p>
+                        <p class="text-xs text-gray-500 capitalize">${transaction.type}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    transactionList.innerHTML = transactionsHTML;
+    renderPagination(page, totalPages);
+}
+        // // Function to render transactions for a specific page
+        // function renderTransactions(page = 1, filter = 'all') {
+        //     const transactionList = document.getElementById('transactionList');
             
-            transactionList.innerHTML = transactionsHTML;
-            renderPagination(page, totalPages);
-        }
+        //     // Filter transactions
+        //     const filteredTransactions = filter === 'all' 
+        //         ? allTransactions 
+        //         : allTransactions.filter(t => t.type === filter);
+            
+        //     // Calculate pagination
+        //     const totalPages = Math.ceil(filteredTransactions.length / transactionsPerPage);
+        //     const startIndex = (page - 1) * transactionsPerPage;
+        //     const endIndex = Math.min(startIndex + transactionsPerPage, filteredTransactions.length);
+        //     const pageTransactions = filteredTransactions.slice(startIndex, endIndex);
+            
+        //     // Update page info
+        //     document.getElementById('pageInfo').textContent = 
+        //         `Page ${page} of ${totalPages} • ${filteredTransactions.length} transactions`;
+            
+        //     if (pageTransactions.length === 0) {
+        //         transactionList.innerHTML = `
+        //             <div class="p-8 text-center text-gray-500">
+        //                 <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        //                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        //                 </svg>
+        //                 <p class="mt-4">No ${filter === 'all' ? '' : filter + ' '}transactions found.</p>
+        //             </div>
+        //         `;
+                
+        //         renderPagination(1, 1);
+        //         return;
+        //     }
+            
+        //     // Render transactions
+        //     let transactionsHTML = '';
+        //     pageTransactions.forEach((transaction, index) => {
+        //         const isDeposit = transaction.type === 'deposit';
+        //         const iconBgColor = isDeposit ? 'bg-green-100' : 'bg-red-100';
+        //         const iconColor = isDeposit ? 'text-green-600' : 'text-red-600';
+        //         const amountClass = isDeposit ? 'deposit' : 'withdrawal';
+        //         const amountSign = isDeposit ? '+' : '-';
+                
+        //         const transactionDate = new Date(transaction.date);
+        //         const formattedDate = transactionDate.toLocaleDateString('en-US', {
+        //             month: 'short',
+        //             day: 'numeric',
+        //             year: 'numeric'
+        //         });
+                
+        //         const formattedTime = transactionDate.toLocaleTimeString('en-US', {
+        //             hour: '2-digit',
+        //             minute: '2-digit'
+        //         });
+                
+        //         transactionsHTML += `
+        //             <div class="transaction-item px-6 py-4 animate-in" style="animation-delay: ${index * 0.05}s">
+        //                 <div class="flex items-center justify-between">
+        //                     <div class="flex items-center">
+        //                         <div class="transaction-icon ${iconBgColor}">
+        //                             <svg class="h-5 w-5 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        //                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${icons[transaction.type] || icons.deposit}"></path>
+        //                             </svg>
+        //                         </div>
+        //                         <div>
+        //                             <h3 class="font-medium text-gray-900">${transaction.description}</h3>
+        //                             <p class="text-sm text-gray-500">${formattedDate} at ${formattedTime}</p>
+        //                         </div>
+        //                     </div>
+        //                     <div class="text-right">
+        //                         <p class="font-semibold ${amountClass}">
+        //                             ${amountSign}$${parseFloat(transaction.amount).toLocaleString('en-US', {
+        //                                 minimumFractionDigits: 2,
+        //                                 maximumFractionDigits: 2
+        //                             })}
+        //                         </p>
+        //                         <p class="text-xs text-gray-500 capitalize">${transaction.type}</p>
+        //                     </div>
+        //                 </div>
+        //             </div>
+        //         `;
+        //     });
+            
+        //     transactionList.innerHTML = transactionsHTML;
+        //     renderPagination(page, totalPages);
+        // }
 
         // Function to render pagination buttons
         function renderPagination(currentPage, totalPages) {

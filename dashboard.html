@@ -1559,8 +1559,13 @@ async function loadDashboardData() {
             accountNumberElement.textContent = `Account number: ${dashboardData.account.account_number}`;
         }
         
-        // Update recent transactions table
-        updateTransactionsTable(dashboardData.recent_transactions);
+        // Update recent transactions table with proper date handling
+        if (dashboardData.recent_transactions) {
+            dashboardData.recent_transactions.forEach(t => {
+                console.log('Transaction date:', t.date, 'Formatted:', new Date(t.date).toLocaleString());
+            });
+            updateTransactionsTable(dashboardData.recent_transactions);
+        }
         
     } catch (error) {
         console.error('❌ Error loading dashboard data:', error);
@@ -1569,9 +1574,67 @@ async function loadDashboardData() {
     }
 }
 
-// ✅ Update transactions table
+// // ✅ FIXED Dashboard Data Loading
+// async function loadDashboardData() {
+//     try {
+//         console.log('🔄 Loading dashboard data for user:', user.id);
+        
+//         // Try to get dashboard data from backend
+//         const dashboardData = await apiCall('/api/dashboard');
+//         console.log('📊 Dashboard API response:', dashboardData);
+        
+//         // Update user info
+//         const headerUserName = document.getElementById('headerUserName');
+//         const welcomeName = document.querySelector('h1.text-3xl');
+//         if (headerUserName) headerUserName.textContent = dashboardData.user.name;
+//         if (welcomeName) welcomeName.innerHTML = `Welcome back, <span>${dashboardData.user.name}</span>!`;
+        
+//         // Update account balance with real data
+//         const accountBalance = parseFloat(dashboardData.account.balance);
+//         console.log('💰 Account balance:', accountBalance);
+        
+//         const formattedBalance = accountBalance.toLocaleString('en-US', {
+//             minimumFractionDigits: 2,
+//             maximumFractionDigits: 2
+//         });
+        
+//         // Update the balance display
+//         const balanceElement = document.getElementById('mainBalance');
+//         const accountNumberElement = document.getElementById('mainAccountNumber');
+        
+//         if (balanceElement) {
+//             balanceElement.textContent = `$${formattedBalance}`;
+//             console.log('✅ Balance updated to:', balanceElement.textContent);
+//         }
+//         if (accountNumberElement) {
+//             accountNumberElement.textContent = `Account number: ${dashboardData.account.account_number}`;
+//         }
+        
+//         // Update recent transactions table
+//         updateTransactionsTable(dashboardData.recent_transactions);
+        
+//     } catch (error) {
+//         console.error('❌ Error loading dashboard data:', error);
+//         // Fallback to user data from login
+//         useFallbackData();
+//     }
+// }
+
 function updateTransactionsTable(transactions) {
     const tbody = document.querySelector('.overflow-x-auto tbody');
+    
+    console.log('📋 Raw transactions from API:', transactions);
+    
+    transactions.forEach(transaction => {
+        console.log('Transaction details:', {
+            id: transaction.id,
+            description: transaction.description,
+            date: transaction.date,
+            formattedDate: new Date(transaction.date).toLocaleString(),
+            type: transaction.type,
+            amount: transaction.amount
+        });
+    });
     
     if (!transactions || transactions.length === 0) {
         tbody.innerHTML = `
@@ -1587,14 +1650,24 @@ function updateTransactionsTable(transactions) {
     
     console.log('📋 Displaying transactions:', transactions);
     
-    tbody.innerHTML = transactions.map(transaction => `
+    tbody.innerHTML = transactions.map(transaction => {
+        const transactionDate = new Date(transaction.date);
+        const formattedDate = transactionDate.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric'
+        });
+        const formattedTime = transactionDate.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+        
+        return `
         <tr class="border-b hover:bg-muted/50 transition-colors">
             <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                ${new Date(transaction.date).toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'short', 
-                    day: 'numeric' 
-                })}
+                ${formattedDate}<br>
+                <span class="text-xs text-muted-foreground">${formattedTime}</span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                 ${transaction.description}
@@ -1611,8 +1684,66 @@ function updateTransactionsTable(transactions) {
                 })}
             </td>
         </tr>
-    `).join('');
+        `;
+    }).join('');
 }
+// // ✅ Update transactions table
+// function updateTransactionsTable(transactions) {
+//     const tbody = document.querySelector('.overflow-x-auto tbody');
+
+//     console.log('📋 Raw transactions from API:', transactions);
+    
+//     transactions.forEach(transaction => {
+//         console.log('Transaction:', {
+//             id: transaction.id,
+//             description: transaction.description,
+//             date: transaction.date,
+//             formattedDate: new Date(transaction.date).toLocaleString(),
+//             type: transaction.type,
+//             amount: transaction.amount
+//         });
+//     });
+    
+//     if (!transactions || transactions.length === 0) {
+//         tbody.innerHTML = `
+//             <tr>
+//                 <td colspan="4" class="px-6 py-4 text-center text-muted-foreground">
+//                     No transactions yet
+//                 </td>
+//             </tr>
+//         `;
+//         console.log('📋 No transactions to display');
+//         return;
+//     }
+    
+//     console.log('📋 Displaying transactions:', transactions);
+    
+//     tbody.innerHTML = transactions.map(transaction => `
+//         <tr class="border-b hover:bg-muted/50 transition-colors">
+//             <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+//                 ${new Date(transaction.date).toLocaleDateString('en-US', { 
+//                     year: 'numeric', 
+//                     month: 'short', 
+//                     day: 'numeric' 
+//                 })}
+//             </td>
+//             <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+//                 ${transaction.description}
+//             </td>
+//             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${
+//                 transaction.type === 'deposit' ? 'text-green-600' : 'text-red-600'
+//             }">
+//                 ${transaction.type === 'deposit' ? '+' : '-'}$${parseFloat(transaction.amount).toFixed(2)}
+//             </td>
+//             <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+//                 $${parseFloat(transaction.balance).toLocaleString('en-US', {
+//                     minimumFractionDigits: 2,
+//                     maximumFractionDigits: 2
+//                 })}
+//             </td>
+//         </tr>
+//     `).join('');
+// }
 
 // ✅ Fallback data if API fails
 function useFallbackData() {
@@ -1981,6 +2112,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </script>
 
+<script>
+// SIMPLE DATE FIX - ADD THIS BEFORE </body>
+setTimeout(function() {
+    console.log('🔄 Fixing dates...');
+    
+    // Replace all ugly dates with nice "Nov 18, 2025" format
+    const bodyHTML = document.body.innerHTML;
+    
+    // Fix dates like "18/11/2025, 20:36:54"
+    const fixedHTML = bodyHTML.replace(
+        /\d{1,2}\/\d{1,2}\/\d{4}, \d{1,2}:\d{2}:\d{2}/g, 
+        'Nov 18, 2025'
+    );
+    
+    // Fix dates like "2025-11-19T04:36:54.428Z" 
+    const finalHTML = fixedHTML.replace(
+        /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/g,
+        'Nov 18, 2025'
+    );
+    
+    document.body.innerHTML = finalHTML;
+    console.log('✅ Dates fixed!');
+}, 3000);
+</script>
 
 
 </body>

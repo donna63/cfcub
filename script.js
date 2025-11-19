@@ -294,3 +294,48 @@ if (typeof module !== 'undefined' && module.exports) {
         showNotification
     };
 }
+
+// MORE AGGRESSIVE DATE FIX
+function forceDateFormatting() {
+    console.log('🔧 Force formatting all dates...');
+    
+    // Get all text content on the page
+    const walker = document.createTreeWalker(
+        document.body,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+    );
+    
+    let node;
+    while (node = walker.nextNode()) {
+        const text = node.textContent;
+        
+        // Match dates like "Nov 18, 2025 06:16 PM"
+        if (text && /[A-Za-z]{3} \d{1,2}, \d{4}\s+\d{1,2}:\d{2}\s*[AP]M/.test(text)) {
+            const cleanDate = text.replace(/\s+\d{1,2}:\d{2}\s*[AP]M/, '');
+            node.textContent = cleanDate;
+            console.log('✅ Cleaned date:', text, '→', cleanDate);
+        }
+        
+        // Match ISO dates
+        if (text && /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(text)) {
+            const date = new Date(text);
+            if (!isNaN(date.getTime())) {
+                const formatted = date.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+                node.textContent = formatted;
+                console.log('✅ Formatted ISO date:', text, '→', formatted);
+            }
+        }
+    }
+}
+
+// Run the aggressive fix
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(forceDateFormatting, 1500);
+    setTimeout(forceDateFormatting, 3000); // Double check
+});

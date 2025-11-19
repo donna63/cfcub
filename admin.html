@@ -126,13 +126,28 @@
                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
             </div>
         </div>
+
+       <!-- <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1">Transaction Date & Time</label>
+    <input type="text" id="transactionDate" required
+           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+           placeholder="Format: YYYY-MM-DD HH:MM:SS (e.g., 2024-03-20 14:30:00)">
+    <p class="text-xs text-gray-500 mt-1">
+        Format: YYYY-MM-DD HH:MM:SS (24-hour format)<br>
+        Example: 2024-03-20 14:30:00 for March 20, 2024, 2:30 PM
+    </p>
+</div> -->
+<!-- 
+<button onclick="fillCurrentDateTime()" class="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 transition text-sm col-span-2">
+    <i class="fas fa-clock mr-1"></i>Current Date & Time
+</button> -->
         
-        <div>
+        <!-- <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Transaction Date</label>
             <input type="datetime-local" id="transactionDate" 
                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
             <p class="text-xs text-gray-500 mt-1">Leave empty for current date/time</p>
-        </div>
+        </div> -->
         
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
@@ -146,6 +161,20 @@
             <span>Add Transaction</span>
         </button>
     </form>
+
+
+    <!-- Add this after the transaction form for testing -->
+<div class="bg-yellow-100 border border-yellow-400 p-4 rounded-lg mt-4">
+    <h3 class="text-lg font-bold text-yellow-800 mb-2">Debug Tools</h3>
+    <div class="space-y-2">
+        <button onclick="testDateFunctionality()" class="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition">
+            <i class="fas fa-vial mr-2"></i>Test Date Functionality
+        </button>
+        <button onclick="checkCurrentDate()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
+            <i class="fas fa-clock mr-2"></i>Check Current Date
+        </button>
+    </div>
+</div>
 </div>
 
         <!-- Users List Section -->
@@ -186,6 +215,50 @@
     <!-- JavaScript -->
     <script src="js/auth.js"></script>
     <script>
+
+        // Debug function to test date functionality
+async function testDateFunctionality() {
+    try {
+        const testDate = new Date('2024-01-15T14:30:00');
+        console.log('🧪 Testing date functionality...');
+        console.log('Test date:', testDate);
+        console.log('Test date ISO:', testDate.toISOString());
+        console.log('Test date local:', testDate.toLocaleString());
+        
+        // Test with a specific user
+        const users = await apiCall('/api/admin/users');
+        if (users.users.length > 0) {
+            const testUser = users.users[0];
+            console.log('Testing with user:', testUser.name);
+            
+            const testData = {
+                userId: testUser._id,
+                type: 'deposit',
+                amount: 100,
+                description: 'TEST - Date functionality test',
+                date: testDate.toISOString()
+            };
+            
+            console.log('Sending test data:', testData);
+            
+            const result = await apiCall('/api/admin/transactions', {
+                method: 'POST',
+                body: JSON.stringify(testData)
+            });
+            
+            console.log('✅ Test transaction successful:', result);
+            alert('✅ Date functionality test successful! Check console for details.');
+        }
+    } catch (error) {
+        console.error('❌ Date functionality test failed:', error);
+        alert('❌ Date test failed: ' + error.message);
+    }
+}
+
+// Add this button to your admin panel for testing
+// <button onclick="testDateFunctionality()" class="bg-purple-600 text-white px-4 py-2 rounded-md mt-4">
+//     Test Date Functionality
+// </button>
 
 // ADMIN AUTH CHECK
 console.log('🔐 Checking admin authentication...');
@@ -324,71 +397,300 @@ document.getElementById('createUserForm').addEventListener('submit', async funct
     }
 });
 
-  document.getElementById('addTransactionForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const submitBtn = this.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    
-    try {
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-        submitBtn.disabled = true;
 
-        const transactionData = {
-            userId: document.getElementById('transactionUser').value,
-            type: document.getElementById('transactionType').value,
-            amount: parseFloat(document.getElementById('transactionAmount').value),
-            description: document.getElementById('transactionDescription').value
-        };
+// Function to fill date examples
+function fillDateExample(dateString) {
+    document.getElementById('transactionDate').value = dateString;
+    console.log('📅 Filled date example:', dateString);
+    
+    // Also fill other fields for easy testing
+    if (!document.getElementById('transactionAmount').value) {
+        document.getElementById('transactionAmount').value = '100';
+    }
+    if (!document.getElementById('transactionDescription').value) {
+        document.getElementById('transactionDescription').value = 'Manual date test transaction';
+    }
+}
 
-        // ✅ FIXED: Added /api/ prefix
-        const result = await apiCall('/api/admin/transactions', {
-            method: 'POST',
-            body: JSON.stringify(transactionData)
-        });
+
+
+
+
+// Function to fill current date and time
+// function fillCurrentDateTime() {
+//     const now = new Date();
+//     const year = now.getFullYear();
+//     const month = String(now.getMonth() + 1).padStart(2, '0');
+//     const day = String(now.getDate()).padStart(2, '0');
+//     const hours = String(now.getHours()).padStart(2, '0');
+//     const minutes = String(now.getMinutes()).padStart(2, '0');
+//     const seconds = String(now.getSeconds()).padStart(2, '0');
+    
+//     const currentDateTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+//     document.getElementById('transactionDate').value = currentDateTime;
+//     console.log('📅 Filled current date/time:', currentDateTime);
+// }
+// Function to fill current date and time - FIXED VERSION
+// Function to fill current date and time - UPDATED VERSION
+function fillCurrentDateTime() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    
+    // Use the exact format: YYYY-MM-DD HH:MM:SS
+    const currentDateTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    document.getElementById('transactionDate').value = currentDateTime;
+    console.log('📅 Filled current date/time:', currentDateTime);
+    console.log('📅 This represents:', new Date().toLocaleString());
+}
+
+
+
+
+// document.getElementById('addTransactionForm').addEventListener('submit', async function(e) {
+//     e.preventDefault();
+    
+//     const submitBtn = this.querySelector('button[type="submit"]');
+//     const originalText = submitBtn.innerHTML;
+    
+//     try {
+//         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+//         submitBtn.disabled = true;
+
+//         // ✅ MANUAL DATE INPUT: Get the date string from text input
+//         const dateInput = document.getElementById('transactionDate').value.trim();
         
-        alert('✅ Transaction added successfully!\nNew balance: $' + result.new_balance);
-        this.reset();
+//         console.log('📅 Raw date input:', dateInput);
+        
+//         if (!dateInput) {
+//             alert('❌ Please enter a date and time');
+//             return;
+//         }
+
+//         // Parse the manual date input (supports multiple formats)
+//         // let transactionDate;
+        
+//         // // Try different date formats
+//         // if (dateInput.includes('T')) {
+//         //     // ISO format: 2024-03-20T14:30:00
+//         //     transactionDate = new Date(dateInput);
+//         // } else if (dateInput.includes(' ')) {
+//         //     // Space format: 2024-03-20 14:30:00
+//         //     const [datePart, timePart] = dateInput.split(' ');
+//         //     transactionDate = new Date(`${datePart}T${timePart}`);
+//         // } else {
+//         //     // Just date: 2024-03-20 (will set time to 00:00:00)
+//         //     transactionDate = new Date(dateInput);
+//         // }
+
+//         // SIMPLE FIX - Replace your current date parsing with this:
+// let transactionDate = new Date(dateInput.replace(' ', 'T') + 'Z');
+// console.log('📅 Fixed date:', transactionDate);
+// console.log('📅 Fixed date ISO:', transactionDate.toISOString());
+
+//         console.log('📅 Parsed Date object:', transactionDate);
+        
+//         // Validate the date
+//         if (isNaN(transactionDate.getTime())) {
+//             alert('❌ Invalid date format. Please use: YYYY-MM-DD HH:MM:SS\nExample: 2024-03-20 14:30:00');
+//             return;
+//         }
+
+//         console.log('📅 Valid date - ISO:', transactionDate.toISOString());
+//         console.log('📅 Valid date - Local:', transactionDate.toLocaleString());
+
+//         const transactionData = {
+//             userId: document.getElementById('transactionUser').value,
+//             type: document.getElementById('transactionType').value,
+//             amount: parseFloat(document.getElementById('transactionAmount').value),
+//             description: document.getElementById('transactionDescription').value,
+//             date: transactionDate.toISOString() // ✅ Send as ISO string
+//         };
+
+//         console.log('📤 Sending transaction data:', transactionData);
+
+//         const result = await apiCall('/api/admin/transactions', {
+//             method: 'POST',
+//             body: JSON.stringify(transactionData)
+//         });
+        
+//         alert('✅ Transaction added successfully!\n' +
+//               'Amount: $' + result.transaction.amount + '\n' +
+//               'Date: ' + new Date(result.transaction.date).toLocaleString() + '\n' +
+//               'New Balance: $' + result.new_balance);
+        
+//         this.reset();
+//         await loadAdminData();
+        
+//     } catch (error) {
+//         console.error('❌ Transaction error:', error);
+//         alert('❌ Error adding transaction: ' + error.message);
+//     } finally {
+//         submitBtn.innerHTML = originalText;
+//         submitBtn.disabled = false;
+//     }
+// });
+//     e.preventDefault();
+    
+//     const submitBtn = this.querySelector('button[type="submit"]');
+//     const originalText = submitBtn.innerHTML;
+    
+//     try {
+//         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+//         submitBtn.disabled = true;
+
+//         const transactionData = {
+//             userId: document.getElementById('transactionUser').value,
+//             type: document.getElementById('transactionType').value,
+//             amount: parseFloat(document.getElementById('transactionAmount').value),
+//             description: document.getElementById('transactionDescription').value
+//         };
+
+
+//          // ✅ FIXED: Include the transaction date
+//         const transactionDateInput = document.getElementById('transactionDate').value;
+        
+//         // const transactionData = {
+//         //     userId: document.getElementById('transactionUser').value,
+//         //     type: document.getElementById('transactionType').value,
+//         //     amount: parseFloat(document.getElementById('transactionAmount').value),
+//         //     description: document.getElementById('transactionDescription').value
+//         // };
+
+//         // ✅ ADD THIS: Include the transaction date if provided
+//         if (transactionDateInput) {
+//             transactionData.date = new Date(transactionDateInput).toISOString();
+//             console.log('📅 Using custom date:', transactionData.date);
+//         } else {
+//             console.log('📅 Using current date');
+//         }
+
+//         console.log('📤 Sending transaction data:', transactionData);
+
+//         const result = await apiCall('/api/admin/transactions', {
+//             method: 'POST',
+//             body: JSON.stringify(transactionData)
+//         });
+        
+//         alert('✅ Transaction added successfully!\nNew balance: $' + result.new_balance);
+//         this.reset();
+//         await loadAdminData();
+        
+//     } catch (error) {
+//         alert('❌ Error adding transaction: ' + error.message);
+//     } finally {
+//         submitBtn.innerHTML = originalText;
+//         submitBtn.disabled = false;
+//     }
+// });
+
+    //     // ✅ FIXED: Added /api/ prefix
+    //     const result = await apiCall('/api/admin/transactions', {
+    //         method: 'POST',
+    //         body: JSON.stringify(transactionData)
+    //     });
+        
+    //     alert('✅ Transaction added successfully!\nNew balance: $' + result.new_balance);
+    //     this.reset();
+    //     await loadAdminData();
+        
+    // } catch (error) {
+    //     alert('❌ Error adding transaction: ' + error.message);
+    // } finally {
+    //     submitBtn.innerHTML = originalText;
+    //     submitBtn.disabled = false;
+    // }
+
+
+   async function addSampleTransactions(userId) {
+    if (!confirm('Add 5 sample transactions for this user with different dates?')) return;
+
+    try {
+        // Sample dates as strings (manual input format)
+        const transactions = [
+            { 
+                type: 'deposit', 
+                amount: 1000, 
+                description: 'Initial account funding',
+                date: '2024-01-15 09:00:00' // January 15, 2024, 9:00 AM
+            },
+            { 
+                type: 'deposit', 
+                amount: 2500, 
+                description: 'Salary deposit',
+                date: '2024-02-01 14:30:00' // February 1, 2024, 2:30 PM
+            },
+            { 
+                type: 'withdrawal', 
+                amount: 500, 
+                description: 'Rent payment',
+                date: '2024-02-05 10:15:00' // February 5, 2024, 10:15 AM
+            },
+            { 
+                type: 'withdrawal', 
+                amount: 150, 
+                description: 'Grocery shopping',
+                date: '2024-02-10 16:45:00' // February 10, 2024, 4:45 PM
+            },
+            { 
+                type: 'deposit', 
+                amount: 300, 
+                description: 'Freelance payment',
+                date: '2024-02-15 11:20:00' // February 15, 2024, 11:20 AM
+            }
+        ];
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (const [index, transaction] of transactions.entries()) {
+            try {
+                console.log(`🔄 Adding sample transaction ${index + 1}/${transactions.length}:`, transaction);
+                
+                // Parse the manual date string
+                const [datePart, timePart] = transaction.date.split(' ');
+                const transactionDate = new Date(`${datePart}T${timePart}`);
+                
+                const result = await apiCall('/api/admin/transactions', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        userId: userId,
+                        type: transaction.type,
+                        amount: transaction.amount,
+                        description: transaction.description,
+                        date: transactionDate.toISOString()
+                    })
+                });
+                
+                console.log(`✅ Sample transaction ${index + 1} added successfully`);
+                console.log(`📅 Transaction date: ${transactionDate.toLocaleString()}`);
+                successCount++;
+                
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+            } catch (error) {
+                console.error(`❌ Error adding sample transaction ${index + 1}:`, error);
+                errorCount++;
+            }
+        }
+
+        if (errorCount === 0) {
+            alert(`✅ All ${successCount} sample transactions added successfully with custom dates!`);
+        } else {
+            alert(`⚠️ ${successCount} transactions added successfully, ${errorCount} failed.`);
+        }
+
         await loadAdminData();
         
     } catch (error) {
-        alert('❌ Error adding transaction: ' + error.message);
-    } finally {
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
+        console.error('❌ Error in sample transactions:', error);
+        alert('❌ Error adding sample transactions: ' + error.message);
     }
-});
-
-        async function addSampleTransactions(userId) {
-            if (!confirm('Add sample transactions for this user?')) return;
-
-            try {
-                const transactions = [
-                    { type: 'deposit', amount: 1000, description: 'Initial account funding' },
-                    { type: 'deposit', amount: 2500, description: 'Salary deposit' },
-                    { type: 'withdrawal', amount: 500, description: 'Rent payment' },
-                    { type: 'withdrawal', amount: 150, description: 'Grocery shopping' },
-                    { type: 'deposit', amount: 300, description: 'Freelance payment' }
-                ];
-
-                for (const transaction of transactions) {
-                    await apiCall('api/admin/transactions', {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            userId: userId,
-                            type: transaction.type,
-                            amount: transaction.amount,
-                            description: transaction.description
-                        })
-                    });
-                }
-
-                alert('✅ Sample transactions added successfully!');
-                await loadAdminData();
-            } catch (error) {
-                alert('❌ Error adding sample transactions: ' + error.message);
-            }
-        }
+}
 
         // Initialize admin dashboard
         document.addEventListener('DOMContentLoaded', function() {
@@ -463,6 +765,96 @@ async function populateUserDropdown() {
     }
 }
 
+// Debug function to check current date setup
+function checkCurrentDate() {
+    const dateInput = document.getElementById('transactionDate');
+    console.log('📅 Current date input value:', dateInput.value);
+    console.log('📅 Current date input type:', typeof dateInput.value);
+    
+    if (dateInput.value) {
+        const parsedDate = new Date(dateInput.value);
+        console.log('📅 Parsed date:', parsedDate);
+        console.log('📅 Parsed ISO:', parsedDate.toISOString());
+        console.log('📅 Parsed local:', parsedDate.toLocaleString());
+    } else {
+        console.log('❌ No date selected in picker');
+    }
+}
+
+// Enhanced test function
+// Enhanced test function
+async function testDateFunctionality() {
+    try {
+        // Test with manual date input format
+        const testDateInput = '2024-01-15 14:30:00';
+        console.log('🧪 Testing date functionality...');
+        console.log('Test date input:', testDateInput);
+        
+        // Test with current user selection
+        const userSelect = document.getElementById('transactionUser');
+        if (!userSelect.value) {
+            alert('Please select a user first');
+            return;
+        }
+        
+        // Fill the form with test data
+        document.getElementById('transactionDate').value = testDateInput;
+        document.getElementById('transactionAmount').value = '100';
+        document.getElementById('transactionDescription').value = 'TEST - Date functionality verification';
+        
+        console.log('✅ Form filled with test data');
+        console.log('📅 Test date should appear as: January 15, 2024, 2:30:00 PM');
+        
+        // Don't submit automatically - let user see the filled form
+        alert('✅ Test form filled!\n\nDate: ' + testDateInput + '\n\nClick "Add Transaction" to test, then check if the date appears correctly in transaction history.');
+        
+    } catch (error) {
+        console.error('❌ Date functionality test failed:', error);
+        alert('❌ Date test failed: ' + error.message);
+    }
+}
+
     </script>
+
+
+<script>
+   document.getElementById('addTransactionForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    try {
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        submitBtn.disabled = true;
+
+        const transactionData = {
+            userId: document.getElementById('transactionUser').value,
+            type: document.getElementById('transactionType').value,
+            amount: parseFloat(document.getElementById('transactionAmount').value),
+            description: document.getElementById('transactionDescription').value
+            // NO DATE FIELD - backend will use current date automatically
+        };
+
+        console.log('📤 Sending transaction without date');
+
+        const result = await apiCall('/api/admin/transactions', {
+            method: 'POST',
+            body: JSON.stringify(transactionData)
+        });
+        
+        alert('✅ Transaction added successfully!');
+        this.reset();
+        await loadAdminData();
+        
+    } catch (error) {
+        console.error('❌ Transaction error:', error);
+        alert('❌ Error: ' + error.message);
+    } finally {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
+});
+</script>
 </body>
 </html>

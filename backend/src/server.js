@@ -10,9 +10,12 @@ console.log('✅ Starting server with Mongoose...');
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// MongoDB connection with Mongoose
-const MONGODB_URI = process.env.DATABASE_URL || process.env.MONGODB_URI || 'mongodb://localhost:27017/banking';
 
+
+// MongoDB connection with Mongoose
+const MONGODB_URI = 'mongodb+srv://donnalynn632:william632@cluster0.nedk38z.mongodb.net/union-bank?retryWrites=true&w=majority&appName=Cluster0';
+
+console.log('🔗 Using MongoDB URL:', MONGODB_URI);
 // Connect to MongoDB with Mongoose
 async function connectToDatabase() {
   try {
@@ -256,7 +259,7 @@ app.listen(PORT, '0.0.0.0', () => {
 // ✅ ADMIN ADD TRANSACTION ENDPOINT - ENHANCED
 app.post('/api/admin/transactions', async (req, res) => {
   try {
-    const { userId, type, amount, description } = req.body;
+    const { userId, type, amount, description, date } = req.body;
     
     console.log('💳 ADD TRANSACTION REQUEST =================================');
     console.log('📥 Full request body:', req.body);
@@ -334,13 +337,25 @@ app.post('/api/admin/transactions', async (req, res) => {
     console.log('✅ User balance updated to:', newBalance);
 
     // Create transaction record
-    const newTransaction = await Transaction.create({
-      userId: user._id,
-      type,
-      amount: amountNum,
-      description: description || `Admin ${type}`,
-      balance_after: newBalance,
-    });
+ // ✅ USE THE CUSTOM DATE FROM ADMIN PANEL
+    let transactionDate = new Date();
+    if (date) {
+      transactionDate = new Date(date);
+      console.log('📅 Using custom date from admin:', transactionDate.toISOString());
+    } else {
+      console.log('📅 Using current date');
+    }
+
+    // Create transaction record with the selected date
+    // Create transaction record with the selected date - FIXED
+const newTransaction = await Transaction.create({
+  userId: user._id,
+  type,
+  amount: amountNum,
+  description: description || `Admin ${type}`,
+  balance_after: newBalance,
+  date: new Date(transactionDate.getTime() - (transactionDate.getTimezoneOffset() * 60000)) // FIX: Remove timezone offset
+});
 
     console.log('✅ Transaction created successfully');
     console.log('📄 Transaction ID:', newTransaction._id);
@@ -648,72 +663,72 @@ app.get('/api/admin/test-transaction', async (req, res) => {
 });
 
 // ✅ SIMPLE TRANSACTION ENDPOINT - FOR DEBUGGING
-app.post('/api/admin/transactions', async (req, res) => {
-  try {
-    console.log('💳 TRANSACTION REQUEST RECEIVED');
-    console.log('Request body:', req.body);
+// app.post('/api/admin/transactions', async (req, res) => {
+//   try {
+//     console.log('💳 TRANSACTION REQUEST RECEIVED');
+//     console.log('Request body:', req.body);
     
-    const { userId, type, amount, description } = req.body;
+//     const { userId, type, amount, description } = req.body;
     
-    // Basic validation
-    if (!userId || !type || !amount) {
-      return res.status(400).json({ 
-        error: 'Missing required fields' 
-      });
-    }
+//     // Basic validation
+//     if (!userId || !type || !amount) {
+//       return res.status(400).json({ 
+//         error: 'Missing required fields' 
+//       });
+//     }
     
-    console.log('🔍 Looking for user:', userId);
+//     console.log('🔍 Looking for user:', userId);
     
-    // Try to find the user
-    const user = await User.findById(userId);
+//     // Try to find the user
+//     const user = await User.findById(userId);
     
-    if (!user) {
-      console.log('❌ User not found');
-      return res.status(404).json({ error: 'User not found' });
-    }
+//     if (!user) {
+//       console.log('❌ User not found');
+//       return res.status(404).json({ error: 'User not found' });
+//     }
     
-    console.log('✅ User found:', user.email);
+//     console.log('✅ User found:', user.email);
     
-    // Simple transaction logic
-    let newBalance = user.balance;
+//     // Simple transaction logic
+//     let newBalance = user.balance;
     
-    if (type === 'deposit') {
-      newBalance += parseFloat(amount);
-    } else if (type === 'withdrawal') {
-      if (user.balance < amount) {
-        return res.status(400).json({ error: 'Insufficient funds' });
-      }
-      newBalance -= parseFloat(amount);
-    }
+//     if (type === 'deposit') {
+//       newBalance += parseFloat(amount);
+//     } else if (type === 'withdrawal') {
+//       if (user.balance < amount) {
+//         return res.status(400).json({ error: 'Insufficient funds' });
+//       }
+//       newBalance -= parseFloat(amount);
+//     }
     
-    // Update user
-    user.balance = newBalance;
-    await user.save();
+//     // Update user
+//     user.balance = newBalance;
+//     await user.save();
     
-    // Create transaction
-    const transaction = await Transaction.create({
-      userId: user._id,
-      type,
-      amount: parseFloat(amount),
-      description: description || 'Admin transaction',
-      balance_after: newBalance
-    });
+//     // Create transaction
+//     const transaction = await Transaction.create({
+//       userId: user._id,
+//       type,
+//       amount: parseFloat(amount),
+//       description: description || 'Admin transaction',
+//       balance_after: newBalance
+//     });
     
-    console.log('✅ Transaction successful');
+//     console.log('✅ Transaction successful');
     
-    res.json({
-      success: true,
-      new_balance: newBalance,
-      transaction: transaction
-    });
+//     res.json({
+//       success: true,
+//       new_balance: newBalance,
+//       transaction: transaction
+//     });
     
-  } catch (error) {
-    console.error('❌ TRANSACTION ERROR:', error);
-    res.status(500).json({ 
-      error: 'Server error: ' + error.message 
-    });
-  }
-});
+//   } catch (error) {
+//     console.error('❌ TRANSACTION ERROR:', error);
+//     res.status(500).json({ 
+//       error: 'Server error: ' + error.message 
+//     });
+//   }
+// });
 
 // ✅ GET all users with their MongoDB IDs (for admin panel)
 app.get('/api/admin/users-with-ids', async (req, res) => {
