@@ -482,26 +482,26 @@ main {
                             <table class="min-w-full divide-y divide-border">
                                 <thead class="bg-muted">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</th>
+                                        <!-- <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</th> -->
                                         <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Description</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Amount</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Balance</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-card divide-y divide-border">
-                                    <tr>
+                                    <!-- <tr>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">sep 15, 2025</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Executive Salary Deposit </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">+$125,000.00</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">$1,200,000</td>
-                                    </tr>
+                                    </tr> -->
 
-                                        <tr>
+                                        <!-- <tr>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">sep 14, 2025</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Stock Dividend Payment </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">+$87,500.00</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">$706,343.21</td>
-                                    </tr>
+                                    </tr> -->
                                     <!-- <tr>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Dec 14, 2024</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Online Purchase - Amazon</td>
@@ -515,12 +515,12 @@ main {
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">$7,470.64</td>
                                     </tr> -->
 
-                                        <tr>
+                                        <!-- <tr>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">sep 13, 2025</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Business Revenue - Q4 </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">+$225,000.00</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">$20,843.21</td>
-                                    </tr>
+                                    </tr> -->
                                     <!-- <tr>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Dec 12, 2024</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Transfer to Savings</td>
@@ -528,12 +528,12 @@ main {
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">$7,670.64</td>
                                     </tr> -->
 
-                                        <tr>
+                                        <!-- <tr>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">sep 12, 2025</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Real Estate Investment Return </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">+$2150,000.00</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">$100,543.21</td>
-                                    </tr>
+                                    </tr> -->
                                     <!-- <tr>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Dec 11, 2024</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">Gas Station - Shell</td>
@@ -1625,21 +1625,10 @@ function updateTransactionsTable(transactions) {
     
     console.log('📋 Raw transactions from API:', transactions);
     
-    transactions.forEach(transaction => {
-        console.log('Transaction details:', {
-            id: transaction.id,
-            description: transaction.description,
-            date: transaction.date,
-            formattedDate: new Date(transaction.date).toLocaleString(),
-            type: transaction.type,
-            amount: transaction.amount
-        });
-    });
-    
     if (!transactions || transactions.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="4" class="px-6 py-4 text-center text-muted-foreground">
+                <td colspan="3" class="px-6 py-4 text-center text-muted-foreground">
                     No transactions yet
                 </td>
             </tr>
@@ -1648,27 +1637,11 @@ function updateTransactionsTable(transactions) {
         return;
     }
     
-    console.log('📋 Displaying transactions:', transactions);
+    console.log('📋 Displaying transactions WITHOUT DATES:', transactions);
     
-    tbody.innerHTML = transactions.map(transaction => {
-        const transactionDate = new Date(transaction.date);
-        const formattedDate = transactionDate.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric'
-        });
-        const formattedTime = transactionDate.toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-        });
-        
-        return `
+    // REMOVE DATE COLUMN COMPLETELY
+    tbody.innerHTML = transactions.map(transaction => `
         <tr class="border-b hover:bg-muted/50 transition-colors">
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                ${formattedDate}<br>
-                <span class="text-xs text-muted-foreground">${formattedTime}</span>
-            </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                 ${transaction.description}
             </td>
@@ -1684,8 +1657,8 @@ function updateTransactionsTable(transactions) {
                 })}
             </td>
         </tr>
-        `;
-    }).join('');
+    `).join('');
+
 }
 // // ✅ Update transactions table
 // function updateTransactionsTable(transactions) {
